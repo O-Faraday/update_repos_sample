@@ -17,7 +17,7 @@ from databricks.vector_search.client import VectorSearchClient  # noqa: E402
 
 llm = get_llm()
 vsc = VectorSearchClient()
-index = vsc.get_index(endpoint_name="sample-vs-endpoint", index_name="main.update_repos_sample.policy_index")
+index = vsc.get_index(endpoint_name="sample-vs-endpoint", index_name="demo.update_repos_sample.policy_index")
 
 # Vector search and model call without error handling (IO-002). The index and
 # its endpoint do not exist in the workspace (REF-001).
@@ -36,4 +36,4 @@ reply = client.predict(endpoint=ENDPOINT, inputs={"messages": [{"role": "user", 
 
 # MAGIC %sql
 # MAGIC SELECT ai_query('databricks-meta-llama-3-3-70b-instruct', concat('Summarize: ', text)) AS summary
-# MAGIC FROM main.update_repos_sample.policies
+# MAGIC FROM demo.update_repos_sample.policies

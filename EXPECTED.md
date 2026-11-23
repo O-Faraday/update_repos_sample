@@ -2,7 +2,7 @@
 
 The evaluation set of the sample: each situation, where it is, the rule that
 should report it, and what the agent found on its last run (2026-11-23,
-deployed to a dev target, nothing run). "Not yet" marks what the agent does
+deployed to a dev target, nothing run; demo data loaded afterwards). "Not yet" marks what the agent does
 not see yet.
 
 | Situation | Where | Rule | Found |
@@ -25,14 +25,18 @@ not see yet.
 | Stream without checkpoint | `src/ingest/stream_events.py` | IO-005 | yes |
 | Libraries that cannot be installed together | `src/genai/ask_policy.py` | LIB-002 | yes |
 | Vector search and model call without error handling | `src/genai/ask_policy.py` | IO-002 | yes |
-| Index, serving endpoint and tables that do not exist | `src/genai/ask_policy.py`, `src/ingest/*` | REF-001 | yes (10 objects: the tables exist only once the jobs run) |
+| Index, serving endpoint, Hive table and tables the notebooks create, that do not exist | `src/genai/ask_policy.py`, `src/ingest/*`, `src/legacy/*` | REF-001 | to check with the data (yes on 10 objects before it) |
 | Model client built in another file | `src/common/llm.py` | not yet (endpoint unresolved) | not yet |
 | `ai_query` in SQL | `src/genai/ask_policy.py` | inventory: model endpoint linked | yes |
 | DBFS mount, /mnt paths, Hive metastore, RDD | `src/legacy/old_etl.py` | CODE-001 | yes |
 | Hard-coded Spark memory, Spark cache, Python UDF | `src/legacy/old_etl.py` | CODE-003 | yes |
 | Copied code | `src/legacy/old_etl_copy.py` | CODE-002 | yes |
 | One library pinned to two versions | `requirements.txt`, `src/legacy/old_etl.py` | LIB-001 | yes |
-| Schema and tables without comments, owned by a person | `resources/schema.yml` | GOV-001, GOV-002 (once tables exist) | not yet (no table) |
+| Table without comment | `data/setup.sql`, `orders_raw` | GOV-001 | to check |
+| Documented table (must not be reported) | `data/setup.sql`, `policies` | not GOV-001 | to check |
+| Tables owned by a person | `data/setup.sql` | GOV-002 | to check |
+| Personal column without a mask (`phone`), next to a masked one (`email`) | `data/setup.sql`, `customers` | PII-001 on `phone` only | to check |
+| UC functions, one without comment | `data/setup.sql` | inventory: functions collected | to check |
 
 Must not be reported:
 

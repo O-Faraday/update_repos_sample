@@ -16,7 +16,7 @@ customers = spark.createDataFrame(response.json())
 
 # COMMAND ----------
 
-spark.sql("USE CATALOG main")
+spark.sql("USE CATALOG demo")
 spark.sql("USE SCHEMA update_repos_sample")
 # A one-level name, completed by the USE statements above.
 customers.write.mode("overwrite").saveAsTable("customers")
@@ -24,5 +24,5 @@ customers.write.mode("overwrite").saveAsTable("customers")
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE main.update_repos_sample.customer_contacts AS
-# MAGIC SELECT customer_id, email, phone FROM main.update_repos_sample.customers
+# MAGIC CREATE OR REPLACE TABLE demo.update_repos_sample.customer_contacts AS
+# MAGIC SELECT customer_id, email, phone FROM demo.update_repos_sample.customers

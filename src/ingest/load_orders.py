@@ -5,7 +5,7 @@
 
 # COMMAND ----------
 
-dbutils.widgets.text("catalog", "main")
+dbutils.widgets.text("catalog", "demo")
 dbutils.widgets.text("schema", "update_repos_sample")
 CATALOG = dbutils.widgets.get("catalog")
 SCHEMA = dbutils.widgets.get("schema")

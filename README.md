@@ -16,6 +16,7 @@ src/genai/                vector search, model calls, ai_query
 src/legacy/               deprecated patterns, and a copy of them
 src/pipeline/             a serverless pipeline (SQL)
 manual/                   a job meant to be created by hand, outside the bundle
+data/                     demo tables, UC functions and a raw file (catalog demo)
 ```
 
 ## Deploy (no schedule, nothing runs)
@@ -36,6 +37,9 @@ files path):
 databricks jobs create --json @manual/job_created_by_hand.json --profile <profile>
 ```
 
+Load the demo data of `data/` (data/README.md): the code reads and writes
+`demo.update_repos_sample`.
+
 Point the agent's `source_root` to the bundle's files path
 (`/Workspace/Users/<you>/.bundle/update_repos_sample/dev/files`) and its
-`project_schemas` to the deployed schema.
+`project_schemas` to `demo.update_repos_sample` and the deployed schema.
