@@ -1,0 +1,4 @@
+# Pinned for the ingest notebooks. pandas is pinned to another version in
+# src/legacy/old_etl.py (LIB-001).
+pandas==2.1.4
+requests==2.31.0

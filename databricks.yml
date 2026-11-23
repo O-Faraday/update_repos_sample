@@ -1,0 +1,36 @@
+# Synthetic example project for the dbx_modernizer agent. Every name, value and
+# credential in this repository is fake. EXPECTED.md lists what the agent
+# should find, file by file.
+bundle:
+  name: update_repos_sample
+
+include:
+  - resources/*.yml
+  # Matches no file: the resources it was meant to add are silently missing (BUNDLE-002).
+  - resources/optional/*.yml
+
+variables:
+  catalog:
+    description: Catalog that holds the sample schema (set it per workspace).
+    default: main
+  schema:
+    description: Schema of the sample tables.
+    default: update_repos_sample
+
+targets:
+  dev:
+    mode: development
+    default: true
+  prod:
+    mode: production
+    # A job declared for prod only: on an all-purpose cluster (JOB-001), with a
+    # notebook that is not in the repository (BUNDLE-002). Never deployed in dev.
+    resources:
+      jobs:
+        legacy_nightly:
+          name: sample_legacy_nightly
+          tasks:
+            - task_key: etl
+              existing_cluster_id: 0000-000000-sample00
+              notebook_task:
+                notebook_path: src/legacy/nightly_missing.py
