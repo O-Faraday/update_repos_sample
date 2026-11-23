@@ -26,12 +26,12 @@ not see yet.
 | Libraries that cannot be installed together | `src/genai/ask_policy.py` | LIB-002 | yes |
 | Vector search and model call without error handling | `src/genai/ask_policy.py` | IO-002 | yes |
 | Index, serving endpoint and Hive table that do not exist | `src/genai/ask_policy.py`, `src/legacy/*` | REF-001 | yes: policy_index, sample-shipping-endpoint, orders_legacy |
-| Model client built in another file (`get_llm()` in `src/common/llm.py`, endpoint in `src/common/config.py`) | `src/genai/ask_policy.py` | inventory: endpoint resolved through the imports | to check |
-| `%run` of a shared settings notebook: its names resolve the experiment, table and model of the caller | `src/genai/agent_driver.py`, `src/common/settings.py` | inventory: `inv_links` (run), targets resolved | to check |
-| `%pip install -r` of the project's requirements | `src/genai/agent_driver.py` | inventory: `inv_links` (requirements) | to check |
-| MLflow model from code: script, configuration, code paths | `src/genai/agent_driver.py`, `agent.py`, `agent_config.yaml` | inventory: `inv_links` (model_code, config), graph edges | to check |
-| `dbutils.notebook.run` of a notebook not in the repository | `src/genai/agent_driver.py`, `./evaluate_agent` | REF-001 (missing source) | to check |
-| URL called from a `%sh` cell | `src/genai/agent_driver.py` | inventory: `inv_io` call `%sh` | to check |
+| Model client built in another file (`get_llm()` in `src/common/llm.py`, endpoint in `src/common/config.py`) | `src/genai/ask_policy.py` | inventory: endpoint resolved through the imports | yes: databricks-meta-llama-3-3-70b-instruct |
+| `%run` of a shared settings notebook: its names resolve the experiment, table and model of the caller | `src/genai/agent_driver.py`, `src/common/settings.py` | inventory: `inv_links` (run), targets resolved | yes: experiment and policies table resolved |
+| `%pip install -r` of the project's requirements | `src/genai/agent_driver.py` | inventory: `inv_links` (requirements) | yes |
+| MLflow model from code: script, configuration, code paths | `src/genai/agent_driver.py`, `agent.py`, `agent_config.yaml` | inventory: `inv_links` (model_code, config), graph edges | yes: logs_model_from, reads_config |
+| `dbutils.notebook.run` of a notebook not in the repository | `src/genai/agent_driver.py`, `./evaluate_agent` | REF-001 (missing source) | yes |
+| URL called from a `%sh` cell | `src/genai/agent_driver.py` | inventory: `inv_io` call `%sh` | yes |
 | Model endpoint read from a YAML file when the model loads | `src/genai/agent.py` | not resolvable statically | not expected |
 | `ai_query` in SQL | `src/genai/ask_policy.py` | inventory: model endpoint linked | yes |
 | DBFS mount, /mnt paths, Hive metastore, RDD | `src/legacy/old_etl.py` | CODE-001 | yes |
