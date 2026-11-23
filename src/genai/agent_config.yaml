@@ -1,0 +1,3 @@
+# Configuration of the policy agent (synthetic), read by agent.py through mlflow.models.ModelConfig.
+llm_endpoint: databricks-meta-llama-3-3-70b-instruct
+max_tokens: 500
