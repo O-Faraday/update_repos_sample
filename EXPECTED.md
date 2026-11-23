@@ -36,6 +36,9 @@ not see yet.
 | `ai_query` in SQL | `src/genai/ask_policy.py` | inventory: model endpoint linked | yes |
 | DBFS mount, /mnt paths, Hive metastore, RDD | `src/legacy/old_etl.py` | CODE-001 | yes |
 | Hard-coded Spark memory, Spark cache, Python UDF | `src/legacy/old_etl.py` | CODE-003 | yes |
+| Data collected to the driver (`.collect()`) | `src/legacy/old_etl.py` | CODE-003 | yes |
+| Pipeline table without expectations | `src/pipeline/bronze_orders.sql` | PIPE-001 | yes |
+| Production job run as a person | none in dev (no production target deployed) | JOB-006 | not expected in dev |
 | Copied code | `src/legacy/old_etl_copy.py` | CODE-002 | yes |
 | One library pinned to two versions | `requirements.txt`, `src/legacy/old_etl.py` | LIB-001 | yes |
 | Table without comment; table with a comment but no column comment | `data/setup.sql`, `orders_raw`, `events_raw` | GOV-001 | yes, both |
@@ -51,3 +54,6 @@ Must not be reported:
 | A Databricks-hosted model endpoint (`databricks-…`) used by the code | BUNDLE-003 | not reported (fixed after the first run) |
 | Tables the notebooks create themselves (`customer_contacts`, `events_clean`) | REF-001 | not reported (fixed after the second run) |
 | `INSERT INTO` right after `CREATE OR REPLACE TABLE` of the same table | IO-004 | not reported on `data/setup.sql` (fixed after the second run) |
+| A model remark that repeats a rule on the same object (password, timeout, append, checkpoint...) | LLM-REVIEW | not reported: 16 to 18 dropped per run |
+| "Two-level table names" where the names have three levels | LLM-REVIEW | not reported (the review is told the resolved names) |
+| `src/common/settings` called orphaned while `agent_driver` `%run`s it | ARCH-LLM | not reported |
