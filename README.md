@@ -1,6 +1,8 @@
 # update_repos_sample
 
-A synthetic Databricks project to test the dbx_modernizer agent.
+A synthetic Databricks project to test and evaluate the dbx_modernizer agent: 116 planted
+situations and 17 clean files (`src/clean/`, written to Databricks guidance), listed in
+`expected.yaml` and rendered in [EXPECTED.md](EXPECTED.md).
 It is built to contain known problems: [EXPECTED.md](EXPECTED.md) lists what
 the agent should find, file by file. Every name, endpoint, URL and credential
 is fake.
@@ -16,6 +18,8 @@ src/genai/                vector search, model calls, ai_query
 src/legacy/               deprecated patterns, and a copy of them
 src/pipeline/             a serverless pipeline (SQL)
 manual/                   a job meant to be created by hand, outside the bundle
+src/clean/                clean code: anything reported here is a false positive
+src/partners, src/reports, src/ml   more planted problems (stage 2)
 data/                     demo tables, UC functions and a raw file (catalog demo)
 ```
 

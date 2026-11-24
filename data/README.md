@@ -18,9 +18,13 @@ Left missing on purpose (REF-001): the vector index `policy_index`, the
 serving endpoint `sample-shipping-endpoint`, and the tables the notebooks
 create themselves (`customer_contacts`, `events_clean`).
 
+| `orders_gold_clean` (setup_clean.sql) | table | written to guidance: commented, clustered (must not be reported) |
+| `country_code` (setup_clean.sql) | SQL function | written to guidance: commented |
+| `grants.sql`, `setup_silver.sql` | SQL | never run: read by the code review only (grants to every user, external silver table, small partitioned table) |
+
 ## Load
 
-`setup.sql` runs statement by statement on a SQL warehouse (the SQL editor,
+`setup.sql`, then `setup_clean.sql`, run statement by statement on a SQL warehouse (the SQL editor,
 or the Statement Execution API). Then copy the raw file to the volume:
 
 ```bash
