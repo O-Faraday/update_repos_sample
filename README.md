@@ -18,6 +18,7 @@ src/genai/                vector search, model calls, ai_query
 src/legacy/               deprecated patterns, and a copy of them
 src/pipeline/             a serverless pipeline (SQL)
 manual/                   a job meant to be created by hand, outside the bundle
+airflow/dags/              a DAG scheduling the sample from Airflow (read by the agent, never run)
 src/clean/                clean code: anything reported here is a false positive
 src/common/pricing.py, frames.py   pure functions with unit tests (tests/)
 tests/                    unit tests: one known bug fails before and after, one test regresses

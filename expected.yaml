@@ -347,3 +347,27 @@ cases:
   - {id: W-upgrade-pandas, step: rewrite, expect: report, level: 7, rule: UPGRADE,
      title: pandas pinned to the latest stable version that installs with the rest (6b),
      object: requirements.txt, diff: '^\+pandas==3\.'}
+
+  # --- What the integration test of a rewrite would run (step 6c), bundle and Airflow ------------------------
+  - {id: P-bundle-order, step: integration_plan, expect: report, title: The bundle's ingest tasks run in their order,
+     object: job:ingest, where: {task_key: load_customers}, expect_row: {kind: notebook, runnable: true, depends_on: load_orders}}
+  - {id: P-dag-outside, step: integration_plan, expect: report, title: Bash and Python tasks run in Airflow and are only listed,
+     object: airflow:sample_nightly, where: {task_key: fetch_feed}, expect_row: {kind: airflow, runnable: false, outside: true}}
+  - {id: P-dag-python-outside, step: integration_plan, expect: report, title: The Python check of the feed is only listed,
+     object: airflow:sample_nightly, where: {task_key: check_feed}, expect_row: {runnable: false, outside: true, depends_on: fetch_feed}}
+  - {id: P-dag-runnow-bundle, step: integration_plan, expect: report,
+     title: The DAG triggers the bundle's job by name (dev prefix) and it is tested once with the bundle,
+     object: airflow:sample_nightly, where: {task_key: ingest}, expect_row: {kind: run_job, runnable: false, outside: true}}
+  - {id: P-dag-sql-file, step: integration_plan, expect: report,
+     title: SQL file of the project named relative to the DAG is replayed as a SQL file task after the ingest,
+     object: airflow:sample_nightly, where: {task_key: kpis}, expect_row: {kind: sql_file, runnable: true, depends_on: ingest}}
+  - {id: P-dag-template, step: integration_plan, expect: report, title: "SQL with an Airflow template ({{ ds }}) is not replayed",
+     object: airflow:sample_nightly, where: {task_key: purge_day}, expect_row: {kind: sql, runnable: false}}
+  - {id: P-dag-repos-path, step: integration_plan, expect: report, level: 3,
+     title: Notebook run from a hand-made Git folder, outside the deployed project, is not replayed,
+     object: airflow:sample_nightly, where: {task_key: customer_report}, expect_row: {kind: notebook, runnable: false, depends_on: kpis}}
+  - {id: P-dag-variable, step: integration_plan, expect: report, title: Notebook path from an Airflow variable is not replayed,
+     object: airflow:sample_nightly, where: {task_key: export_partner}, expect_row: {runnable: false, depends_on: customer_report}}
+  - {id: P-NOT-dag-runnow-twice, step: integration_plan, expect: not_report,
+     title: The triggered job's tasks are not replayed a second time under the DAG,
+     object: airflow:sample_nightly, where: {task_key: ingest.load_orders}, expect_row: {kind: notebook}}

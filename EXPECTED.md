@@ -159,6 +159,20 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | U-paris-day | report | Time zone helper still passes | `tests/test_clean.py` | test = tests.test_clean::test_business_day_is_in_paris_time, before = passed, after = passed |  |
 | U-vat-unchanged | report | A pure function untouched by the rewrite still passes | `tests/test_pricing.py` | test = tests.test_pricing::test_with_vat, before = passed, after = passed |  |
 
+## What the integration test would run (step 6c)
+
+| Id | Expect | Situation | Where | What | Result |
+|---|---|---|---|---|---|
+| P-dag-repos-path | report | Notebook run from a hand-made Git folder | `airflow:sample_nightly` | task_key = customer_report, kind = notebook, runnable = False, depends_on = kpis |  |
+| P-bundle-order | report | The bundle's ingest tasks run in their order | `job:ingest` | task_key = load_customers, kind = notebook, runnable = True, depends_on = load_orders |  |
+| P-dag-outside | report | Bash and Python tasks run in Airflow and are only listed | `airflow:sample_nightly` | task_key = fetch_feed, kind = airflow, runnable = False, outside = True |  |
+| P-dag-python-outside | report | The Python check of the feed is only listed | `airflow:sample_nightly` | task_key = check_feed, runnable = False, outside = True, depends_on = fetch_feed |  |
+| P-dag-runnow-bundle | report | The DAG triggers the bundle's job by name (dev prefix) and it is tested once with the bundle | `airflow:sample_nightly` | task_key = ingest, kind = run_job, runnable = False, outside = True |  |
+| P-dag-sql-file | report | SQL file of the project named relative to the DAG is replayed as a SQL file task after the ingest | `airflow:sample_nightly` | task_key = kpis, kind = sql_file, runnable = True, depends_on = ingest |  |
+| P-dag-template | report | SQL with an Airflow template ({{ ds }}) is not replayed | `airflow:sample_nightly` | task_key = purge_day, kind = sql, runnable = False |  |
+| P-dag-variable | report | Notebook path from an Airflow variable is not replayed | `airflow:sample_nightly` | task_key = export_partner, runnable = False, depends_on = customer_report |  |
+| P-NOT-dag-runnow-twice | must not report | The triggered job's tasks are not replayed a second time under the DAG | `airflow:sample_nightly` | task_key = ingest.load_orders, kind = notebook |  |
+
 ## Clean files
 
 Written to Databricks guidance: anything reported on them is a false positive.
