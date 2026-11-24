@@ -13,14 +13,13 @@ catalog `demo`, schema `update_repos_sample`. Every row is invented.
 | `amount_band` | SQL function | documented |
 | `normalize_country` | Python function | no comment |
 | `raw` | volume | `raw/orders/orders.csv`, read without a schema by `load_orders.py` (IO-006) |
+| `orders_gold_clean` (setup_clean.sql) | table | written to guidance: commented, clustered (must not be reported) |
+| `country_code` (setup_clean.sql) | SQL function | written to guidance: commented |
+| `grants.sql`, `setup_silver.sql` | SQL | never run: read by the code review only (grants to every user, external silver table, small partitioned table) |
 
 Left missing on purpose (REF-001): the vector index `policy_index`, the
 serving endpoint `sample-shipping-endpoint`, and the tables the notebooks
 create themselves (`customer_contacts`, `events_clean`).
-
-| `orders_gold_clean` (setup_clean.sql) | table | written to guidance: commented, clustered (must not be reported) |
-| `country_code` (setup_clean.sql) | SQL function | written to guidance: commented |
-| `grants.sql`, `setup_silver.sql` | SQL | never run: read by the code review only (grants to every user, external silver table, small partitioned table) |
 
 ## Load
 
