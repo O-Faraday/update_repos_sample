@@ -326,3 +326,24 @@ cases:
      title: Timeout on the partner call, object: src/partners/export_partner.py, diff: 'timeout=\d+'}
   - {id: W2-autoloader-checkpoint, step: rewrite, expect: report, level: 2, rule: IO-005,
      title: Checkpoint on the Auto Loader stream, object: src/ingest/autoload_returns.py, diff: 'checkpointLocation'}
+
+  # --- Unit tests before and after the rewrite (step 6c) --------------------------------------------------
+  - {id: U-vat-unchanged, step: unit_tests, expect: report, title: A pure function untouched by the rewrite still passes,
+     object: tests/test_pricing.py, where: {test: "tests.test_pricing::test_with_vat"},
+     expect_row: {before: passed, after: passed}}
+  - {id: U-paris-day, step: unit_tests, expect: report, title: Time zone helper still passes,
+     object: tests/test_clean.py, where: {test: "tests.test_clean::test_business_day_is_in_paris_time"},
+     expect_row: {before: passed, after: passed}}
+  - {id: U-frames-upper, step: unit_tests, expect: report, title: pandas helper unaffected by pandas 3 still passes,
+     object: tests/test_frames.py, where: {test: "tests.test_frames::test_orders_frame_upper_cases_the_country"},
+     expect_row: {before: passed, after: passed}}
+  - {id: U-known-bug, step: unit_tests, expect: report, title: The project's known bug fails before and after (not the rewrite's),
+     object: tests/test_pricing.py, where: {test: "tests.test_pricing::test_normalize_country_trims_spaces"},
+     expect_row: {verdict: still_failing}}
+  - {id: U-pandas3-regression, step: unit_tests, expect: report, level: 7,
+     title: "Upgrade of pandas 2 to 3 (6b) breaks a check written for object dtype: a regression that blocks the delivery",
+     object: tests/test_frames.py, where: {test: "tests.test_frames::test_country_is_text"},
+     expect_row: {before: passed, after: failed, verdict: regressions}}
+  - {id: W-upgrade-pandas, step: rewrite, expect: report, level: 7, rule: UPGRADE,
+     title: pandas pinned to the latest stable version that installs with the rest (6b),
+     object: requirements.txt, diff: '^\+pandas==3\.'}

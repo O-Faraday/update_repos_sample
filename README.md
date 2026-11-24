@@ -19,6 +19,9 @@ src/legacy/               deprecated patterns, and a copy of them
 src/pipeline/             a serverless pipeline (SQL)
 manual/                   a job meant to be created by hand, outside the bundle
 src/clean/                clean code: anything reported here is a false positive
+src/common/pricing.py, frames.py   pure functions with unit tests (tests/)
+tests/                    unit tests: one known bug fails before and after, one test regresses
+                          when step 6b upgrades pandas 2 to 3 (step 6c must catch it)
 src/partners, src/reports, src/ml   more planted problems (stage 2)
 data/                     demo tables, UC functions and a raw file (catalog demo)
 ```

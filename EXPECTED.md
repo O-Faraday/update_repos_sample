@@ -147,6 +147,17 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | W2-autoloader-checkpoint | report | Checkpoint on the Auto Loader stream | `src/ingest/autoload_returns.py` | IO-005, diff `checkpointLocation` |  |
 | W2-partner-timeout | report | Timeout on the partner call | `src/partners/export_partner.py` | IO-003, diff `timeout=\d+` |  |
 | W-retries | report | Retries and timeouts in the bundle | `resources/jobs.yml` | JOB-004, diff `^\+\s+max_retries:` |  |
+| W-upgrade-pandas | report | pandas pinned to the latest stable version that installs with the rest (6b) | `requirements.txt` | UPGRADE, diff `^\+pandas==3\.` |  |
+
+## Unit tests before and after the rewrite (step 6c)
+
+| Id | Expect | Situation | Where | What | Result |
+|---|---|---|---|---|---|
+| U-pandas3-regression | report | Upgrade of pandas 2 to 3 (6b) breaks a check written for object dtype: a regression that blocks the delivery | `tests/test_frames.py` | test = tests.test_frames::test_country_is_text, before = passed, after = failed, verdict = regressions |  |
+| U-frames-upper | report | pandas helper unaffected by pandas 3 still passes | `tests/test_frames.py` | test = tests.test_frames::test_orders_frame_upper_cases_the_country, before = passed, after = passed |  |
+| U-known-bug | report | The project's known bug fails before and after (not the rewrite's) | `tests/test_pricing.py` | test = tests.test_pricing::test_normalize_country_trims_spaces, verdict = still_failing |  |
+| U-paris-day | report | Time zone helper still passes | `tests/test_clean.py` | test = tests.test_clean::test_business_day_is_in_paris_time, before = passed, after = passed |  |
+| U-vat-unchanged | report | A pure function untouched by the rewrite still passes | `tests/test_pricing.py` | test = tests.test_pricing::test_with_vat, before = passed, after = passed |  |
 
 ## Clean files
 
