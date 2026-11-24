@@ -4,12 +4,6 @@
 bundle:
   name: update_repos_sample
 
-# The evaluation files are for the agent's tests, not part of the project: not deployed.
-sync:
-  exclude:
-    - expected.yaml
-    - EXPECTED.md
-
 include:
   - resources/*.yml
   # Matches no file: the resources it was meant to add are silently missing (BUNDLE-002).

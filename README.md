@@ -47,3 +47,11 @@ Load the demo data of `data/` (data/README.md): the code reads and writes
 Point the agent's `source_root` to the bundle's files path
 (`/Workspace/Users/<you>/.bundle/update_repos_sample/dev/files`) and its
 `project_schemas` to `demo.update_repos_sample` and the deployed schema.
+
+## Evaluation
+
+`expected.yaml` is deployed with the project so the agent's evaluation job
+can read it; give the agent `source_exclude: [expected.yaml, EXPECTED.md]` so
+its inventory does not analyse them. Run one model setup with
+`databricks bundle run evaluate --params setup=<name>` in the agent's bundle.
+
