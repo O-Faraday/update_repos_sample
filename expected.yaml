@@ -1,0 +1,179 @@
+# The expected answers of this evaluation project (format: dbx_modernizer, src/dbx_modernizer/evaluation/cases.py).
+# EXPECTED.md is generated from this file: edit here, then render.
+# Objects: a repository path, table:<name>, job:<bundle key or job name>, bundle:<name>, endpoint:<name>,
+# index:<name>, function:<name>, project.
+version: 1
+project: update_repos_sample
+
+# Written to Databricks guidance: anything reported on them is a false positive.
+clean_files: []
+
+cases:
+  # --- Deterministic rules: must report -------------------------------------------------------------
+  - {id: R-SEC-001-password, step: rules, expect: report, level: 0, rule: SEC-001,
+     title: Password written in a notebook, object: src/ingest/load_customers.py}
+  - {id: R-PII-001-phone, step: rules, expect: report, level: 1, rule: PII-001,
+     title: Personal column without a mask (phone; email is masked), object: table:demo.update_repos_sample.customers}
+  - {id: R-IO-001-swallow, step: rules, expect: report, level: 2, rule: IO-001,
+     title: Write in a try whose except swallows the error, object: src/ingest/load_orders.py}
+  - {id: R-IO-002-http, step: rules, expect: report, level: 2, rule: IO-002,
+     title: HTTP call without error handling, object: src/ingest/load_customers.py}
+  - {id: R-IO-002-genai, step: rules, expect: report, level: 2, rule: IO-002,
+     title: Vector search and model call without error handling, object: src/genai/ask_policy.py}
+  - {id: R-IO-003-timeout, step: rules, expect: report, level: 2, rule: IO-003,
+     title: HTTP call without timeout, object: src/ingest/load_customers.py}
+  - {id: R-IO-004-append, step: rules, expect: report, level: 2, rule: IO-004,
+     title: Append write, not idempotent, object: src/ingest/load_orders.py}
+  - {id: R-IO-005-checkpoint, step: rules, expect: report, level: 2, rule: IO-005,
+     title: Stream without checkpoint, object: src/ingest/stream_events.py}
+  - {id: R-IO-006-schema, step: rules, expect: report, level: 2, rule: IO-006,
+     title: CSV read without a schema, object: src/ingest/load_orders.py}
+  - {id: R-LIB-002-conflict, step: rules, expect: report, level: 2, rule: LIB-002,
+     title: Libraries that cannot be installed together (langchain-core 0.3 with pydantic 1),
+     object: src/genai/ask_policy.py}
+  - {id: R-PIPE-001-expectations, step: rules, expect: report, level: 2, rule: PIPE-001,
+     title: Pipeline table without expectations, object: src/pipeline/bronze_orders.sql}
+  - {id: R-BUNDLE-002-paths, step: rules, expect: report, level: 2, rule: BUNDLE-002,
+     title: Include that matches no file and prod notebook not in the repository, object: bundle:update_repos_sample}
+  - {id: R-REF-001-index, step: rules, expect: report, level: 2, rule: REF-001,
+     title: Vector index that does not exist, object: index:demo.update_repos_sample.policy_index}
+  - {id: R-REF-001-endpoint, step: rules, expect: report, level: 2, rule: REF-001,
+     title: Serving endpoint that does not exist, object: endpoint:sample-shipping-endpoint}
+  - {id: R-REF-001-hive, step: rules, expect: report, level: 2, rule: REF-001,
+     title: Hive metastore table that does not exist, object: table:hive_metastore.default.orders_legacy}
+  - {id: R-REF-001-notebook, step: rules, expect: report, level: 2, rule: REF-001,
+     title: dbutils.notebook.run of a notebook not in the repository, object: src/genai/evaluate_agent}
+  - {id: R-JOB-003-ingest, step: rules, expect: report, level: 3, rule: JOB-003,
+     title: Job never run and not scheduled, object: job:ingest}
+  - {id: R-JOB-004-ingest, step: rules, expect: report, level: 3, rule: JOB-004,
+     title: Job without retries, timeout or failure notification, object: job:ingest}
+  - {id: R-JOB-005-manual, step: rules, expect: report, level: 3, rule: JOB-005,
+     title: Job created by hand, not from version control, object: job:sample_manual_export}
+  - {id: R-BUNDLE-003-manual, step: rules, expect: report, level: 3, rule: BUNDLE-003,
+     title: Job of the project outside its bundle, object: job:sample_manual_export}
+  - {id: R-GOV-001-orders, step: rules, expect: report, level: 4, rule: GOV-001,
+     title: Table without comment, object: table:demo.update_repos_sample.orders_raw}
+  - {id: R-GOV-001-events, step: rules, expect: report, level: 4, rule: GOV-001,
+     title: Table comment but no column comment, object: table:demo.update_repos_sample.events_raw}
+  - {id: R-GOV-002-owner, step: rules, expect: report, level: 4, rule: GOV-002,
+     title: Table owned by a person, object: table:demo.update_repos_sample.policies}
+  - {id: R-CODE-003-collect, step: rules, expect: report, level: 5, rule: CODE-003,
+     title: Spark cache, Python UDF, hard-coded executor memory, collect to the driver, object: src/legacy/old_etl.py}
+  - {id: R-CODE-002-copy, step: rules, expect: report, level: 6, rule: CODE-002,
+     title: Copied code, object: src/legacy/old_etl_copy.py}
+  - {id: R-CODE-001-legacy, step: rules, expect: report, level: 7, rule: CODE-001,
+     title: DBFS mount, /mnt paths, Hive metastore, RDD, object: src/legacy/old_etl.py}
+  - {id: R-LIB-001-versions, step: rules, expect: report, level: 7, rule: LIB-001,
+     title: pandas pinned to two versions, object: project}
+
+  # --- Deterministic rules: must not report ----------------------------------------------------------
+  - {id: R-NOT-GOV-001-policies, step: rules, expect: not_report, level: 4, rule: GOV-001,
+     title: Documented table, object: table:demo.update_repos_sample.policies}
+  - {id: R-NOT-GOV-001-customers, step: rules, expect: not_report, level: 4, rule: GOV-001,
+     title: Documented table, object: table:demo.update_repos_sample.customers}
+  - {id: R-NOT-BUNDLE-003-platform, step: rules, expect: not_report, level: 3, rule: BUNDLE-003,
+     title: Endpoint served by Databricks, used by the code, object: endpoint:databricks-meta-llama-3-3-70b-instruct}
+  - {id: R-NOT-REF-001-created, step: rules, expect: not_report, level: 2, rule: REF-001,
+     title: Table the notebooks create themselves, object: table:demo.update_repos_sample.customer_contacts}
+  - {id: R-NOT-REF-001-stream, step: rules, expect: not_report, level: 2, rule: REF-001,
+     title: Table a stream creates, object: table:demo.update_repos_sample.events_clean}
+  - {id: R-NOT-IO-004-replace, step: rules, expect: not_report, level: 2, rule: IO-004,
+     title: INSERT right after CREATE OR REPLACE TABLE of the same table, object: data/setup.sql}
+  - {id: R-NOT-JOB-006-dev, step: rules, expect: not_report, level: 0, rule: JOB-006,
+     title: Development job run as its developer, object: job:ingest}
+
+  # --- Inventory ---------------------------------------------------------------------------------------
+  - {id: I-bundle-prod, step: inventory, expect: report, title: Prod-only job declared with a notebook not in the repository,
+     object: job:legacy_nightly, table: inv_bundle, expect_row: {target: prod}}
+  - {id: I-widgets, step: inventory, expect: report, title: Table name built from widgets and f-strings,
+     object: src/ingest/load_orders.py, table: inv_io, where: {line: 25},
+     expect_row: {target: demo.update_repos_sample.orders_raw, resolved: true}}
+  - {id: I-use-catalog, step: inventory, expect: report, title: One-level name completed by USE CATALOG and USE SCHEMA,
+     object: src/ingest/load_customers.py, table: inv_io, where: {line: 22},
+     expect_row: {target: demo.update_repos_sample.customers, resolved: true}}
+  - {id: I-cross-file-llm, step: inventory, expect: report, title: Model client built in another file (get_llm),
+     object: src/genai/ask_policy.py, table: inv_io, where: {line: 25},
+     expect_row: {target: databricks-meta-llama-3-3-70b-instruct, resolved: true}}
+  - {id: I-ai-query, step: inventory, expect: report, title: ai_query in SQL,
+     object: src/genai/ask_policy.py, table: inv_io, where: {api: "%sql ai_query"},
+     expect_row: {target: databricks-meta-llama-3-3-70b-instruct}}
+  - {id: I-run-settings, step: inventory, expect: report, title: "%run of a shared settings notebook",
+     object: src/genai/agent_driver.py, table: inv_links, where: {kind: run}, expect_row: {found: true}}
+  - {id: I-run-names, step: inventory, expect: report, title: Names from the %run notebook resolve the table read,
+     object: src/genai/agent_driver.py, table: inv_io, where: {api: spark.table},
+     expect_row: {target: demo.update_repos_sample.policies, resolved: true}}
+  - {id: I-pip-r, step: inventory, expect: report, title: "%pip install -r of the project's requirements",
+     object: src/genai/agent_driver.py, table: inv_links, where: {kind: requirements}, expect_row: {found: true}}
+  - {id: I-model-code, step: inventory, expect: report, title: MLflow model from code,
+     object: src/genai/agent_driver.py, table: inv_links, where: {kind: model_code, target: agent.py},
+     expect_row: {found: true}}
+  - {id: I-model-config, step: inventory, expect: report, title: Configuration of the model from code,
+     object: src/genai/agent.py, table: inv_links, where: {kind: config}, expect_row: {found: true}}
+  - {id: I-notebook-run-missing, step: inventory, expect: report, title: Notebook run that is not in the repository,
+     object: src/genai/agent_driver.py, table: inv_links, where: {kind: notebook_run}, expect_row: {found: false}}
+  - {id: I-sh-url, step: inventory, expect: report, title: URL called from a %sh cell,
+     object: src/genai/agent_driver.py, table: inv_io, where: {api: "%sh"},
+     expect_row: {target: "https://docs.example.invalid/policies/latest.json"}}
+  - {id: I-function, step: inventory, expect: report, title: UC function of the project collected,
+     object: function:demo.update_repos_sample.normalize_country, table: inv_nodes, expect_row: {status: present}}
+
+  # --- Code review (model): problems the rules do not see ------------------------------------------------
+  - {id: C-stream-trigger, step: code_review, expect: report, level: 3, lines: [9, 12],
+     title: Stream without a trigger (the default is not supported on serverless),
+     object: src/ingest/stream_events.py, topic: 'trigger|availableNow|serverless'}
+  - {id: C-json-schema, step: code_review, expect: report, level: 2, lines: [14, 15],
+     title: DataFrame built from an API response without schema or validation,
+     object: src/ingest/load_customers.py, topic: 'schema|validat|json'}
+  - {id: C-config-none, step: code_review, expect: report, level: 2, lines: [9, 9],
+     title: Endpoint read from the model config without a check (None if the key is missing),
+     object: src/genai/agent.py, topic: 'config|none|missing'}
+  - {id: C-ai-query-scan, step: code_review, expect: report, level: 5, lines: [36, 39],
+     title: ai_query over a whole table on each run,
+     object: src/genai/ask_policy.py, topic: 'scan|every row|all rows|whole table|limit|incremental'}
+  # Repeats of a rule, or wrong: must not be reported.
+  - {id: C-NOT-password-repeat, step: code_review, expect: not_report, level: 0,
+     title: Hard-coded password, already reported by SEC-001, object: src/ingest/load_customers.py,
+     topic: 'password|credential'}
+  - {id: C-NOT-checkpoint-repeat, step: code_review, expect: not_report, level: 2,
+     title: Missing checkpoint, already reported by IO-005, object: src/ingest/stream_events.py, topic: 'checkpoint'}
+  - {id: C-NOT-two-level, step: code_review, expect: not_report, level: 4,
+     title: Two-level table names where the names have three levels, object: src/ingest/stream_events.py,
+     topic: 'two-level|two level'}
+
+  # --- Architecture review (model) -------------------------------------------------------------------------
+  - {id: A-no-evaluation, step: architecture, expect: report, level: 2,
+     title: The agent is logged without an evaluation (its evaluation notebook is missing),
+     object: src/genai/agent_driver.py, topic: 'evaluat'}
+  - {id: A-no-tests, step: architecture, expect: report, level: 3, title: No automated tests in the project,
+     object: project, topic: 'test'}
+  - {id: A-hive, step: architecture, expect: report, level: 4, title: Data outside Unity Catalog (hive_metastore),
+     object: table:hive_metastore.default.orders_legacy, topic: 'hive|unity catalog'}
+  - {id: A-NOT-orphan-settings, step: architecture, expect: not_report, level: 6,
+     title: Settings notebook called orphaned while %run by agent_driver, object: src/common/settings.py,
+     topic: 'orphan|not run|not executed'}
+  - {id: A-NOT-platform-monitoring, step: architecture, expect: not_report, level: 3,
+     title: Monitoring asked of an endpoint Databricks serves, object: endpoint:databricks-meta-llama-3-3-70b-instruct,
+     topic: 'monitor'}
+
+  # --- Target design (step 4) --------------------------------------------------------------------------
+  - {id: T-ingest-job, step: target_design, expect: report, level: 0,
+     title: One change for the ingest job and the code it runs,
+     object: job:ingest, rules: [SEC-001, IO-001, IO-003, JOB-004]}
+  - {id: T-genai-job, step: target_design, expect: report, level: 2, title: One change for the GenAI job,
+     object: job:genai_answers, rules: [LIB-002]}
+  - {id: T-NOT-platform, step: target_design, expect: not_report,
+     title: No change on an endpoint Databricks serves, object: endpoint:databricks-meta-llama-3-3-70b-instruct}
+
+  # --- Rewrite (step 6) ----------------------------------------------------------------------------------
+  - {id: W-secret, step: rewrite, expect: report, level: 0, rule: SEC-001, title: Password read from a secret scope,
+     object: src/ingest/load_customers.py, diff: 'dbutils\.secrets\.get\('}
+  - {id: W-timeout, step: rewrite, expect: report, level: 2, rule: IO-003, title: Timeout on the HTTP call,
+     object: src/ingest/load_customers.py, diff: 'timeout=\d+'}
+  - {id: W-reraise, step: rewrite, expect: report, level: 2, rule: IO-001, title: Error raised again,
+     object: src/ingest/load_orders.py, diff: '^\+\s+raise'}
+  - {id: W-checkpoint, step: rewrite, expect: report, level: 2, rule: IO-005, title: Checkpoint on the stream,
+     object: src/ingest/stream_events.py, diff: 'checkpointLocation'}
+  - {id: W-retries, step: rewrite, expect: report, level: 3, rule: JOB-004, title: Retries and timeouts in the bundle,
+     object: resources/jobs.yml, diff: '^\+\s+max_retries:'}
+  - {id: W-repin-conflict, step: rewrite, expect: report, level: 2, rule: LIB-002,
+     title: Libraries pinned to versions that install together, object: src/genai/ask_policy.py, diff: 'pydantic==2\.'}
