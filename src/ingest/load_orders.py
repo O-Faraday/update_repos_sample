@@ -25,3 +25,4 @@ try:
     orders.write.mode("append").saveAsTable(TABLE)
 except Exception as e:
     print(f"load failed: {e}")
+    raise  # do not continue after a failed read or write

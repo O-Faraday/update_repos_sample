@@ -12,7 +12,7 @@ CATALOG = dbutils.widgets.get("catalog")
 SCHEMA = dbutils.widgets.get("schema")
 
 # A fake password written in the code (SEC-001): it belongs in a secret scope.
-partner_password = "not-a-real-password-123"
+partner_password = dbutils.secrets.get(scope="<secret scope>", key="partner_password")
 
 # COMMAND ----------
 
