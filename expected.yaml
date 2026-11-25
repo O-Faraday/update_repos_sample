@@ -24,6 +24,9 @@ clean_files:
   - src/clean/stream_events.py
   - data/setup_clean.sql
   - resources/clean_jobs.yml
+  - transform/models/staging/stg_orders.sql
+  - transform/models/staging/stg_customers.sql
+  - transform/models/marts/orders_current.sql
 
 cases:
   # --- Deterministic rules: must report -------------------------------------------------------------
@@ -371,3 +374,49 @@ cases:
   - {id: P-NOT-dag-runnow-twice, step: integration_plan, expect: not_report,
      title: The triggered job's tasks are not replayed a second time under the DAG,
      object: airflow:sample_nightly, where: {task_key: ingest.load_orders}, expect_row: {kind: notebook}}
+  - {id: P-dag-dbt, step: integration_plan, expect: report, title: The DAG's dbt build is listed for a person to check, not replayed,
+     object: airflow:sample_nightly, where: {task_key: dbt_build}, expect_row: {kind: dbt, runnable: false, depends_on: ingest}}
+
+  # --- dbt projects (transform/, transform_legacy/): read, never run --------------------------------------
+  - {id: R-DBT-001-hard-coded, step: rules, expect: report, level: 6, rule: DBT-001,
+     title: Model reads the customers table by its name, not through source(), object: transform/models/marts/customer_orders.sql}
+  - {id: R-DBT-002-merge-key, step: rules, expect: report, level: 2, rule: DBT-002,
+     title: Incremental merge without unique_key duplicates a re-run day, object: transform/models/marts/daily_orders.sql}
+  - {id: R-DBT-003-untested, step: rules, expect: report, level: 2, rule: DBT-003,
+     title: Two marts models without any data test, object: transform/dbt_project.yml}
+  - {id: R-DBT-004-freshness, step: rules, expect: report, level: 2, rule: DBT-004,
+     title: Customers source without freshness (orders has one), object: transform/dbt_project.yml}
+  - {id: R-DBT-005-adapter, step: rules, expect: report, level: 7, rule: DBT-005,
+     title: dbt-databricks pinned below 1.6.0, object: transform/requirements.txt}
+  - {id: R-DBT-006-token, step: rules, expect: report, level: 0, rule: DBT-006,
+     title: Token written in profiles.yml (dev target; ci reads it with env_var), object: transform/profiles.yml}
+  - {id: R-DBT-007-macro, step: rules, expect: report, level: 3, rule: DBT-007,
+     title: The legacy project renames its schemas with its own generate_schema_name, object: transform_legacy/dbt_project.yml}
+  - {id: R-NOT-DBT-002-keyed, step: rules, expect: not_report, rule: DBT-002,
+     title: Incremental merge on unique_key order_id, object: transform/models/marts/orders_current.sql}
+  - {id: R-NOT-DBT-001-ref, step: rules, expect: not_report, rule: DBT-001,
+     title: Model that reads only through ref(), object: transform/models/marts/orders_current.sql}
+  - {id: R-NOT-DBT-003-tested, step: rules, expect: not_report, rule: DBT-003,
+     title: Every model of the legacy project is tested, object: transform_legacy/dbt_project.yml}
+  - {id: R-NOT-DBT-007-default, step: rules, expect: not_report, rule: DBT-007,
+     title: The main project keeps dbt's default naming, object: transform/dbt_project.yml}
+  - {id: I-dbt-custom-schema, step: inventory, expect: report,
+     title: "A marts model lands in <target schema>_marts, in the catalog of the profile's target",
+     object: transform/models/marts/daily_orders.sql, table: inv_io, where: {api: dbt incremental},
+     expect_row: {kind: write, target: demo.update_repos_sample_marts.daily_orders, mode: merge, resolved: true}}
+  - {id: I-dbt-source-identifier, step: inventory, expect: report, title: A source table read under its identifier,
+     object: transform/models/staging/stg_orders.sql, table: inv_io, where: {api: dbt source},
+     expect_row: {target: demo.update_repos_sample.orders_raw, resolved: true}}
+  - {id: I-dbt-ref, step: inventory, expect: report, title: "ref() read as the view of the staging model",
+     object: transform/models/marts/orders_current.sql, table: inv_io, where: {api: dbt ref, line: 10},
+     expect_row: {target: demo.update_repos_sample.stg_customers, resolved: true}}
+  - {id: I-dbt-hard-coded, step: inventory, expect: report, title: The table read by its name joins the lineage,
+     object: transform/models/marts/customer_orders.sql, table: inv_io, where: {api: dbt hard-coded},
+     expect_row: {target: demo.update_repos_sample.customers, line: 7}}
+  - {id: I-dbt-macro-unresolved, step: inventory, expect: report,
+     title: With an overridden naming macro the model's table is left unresolved, not guessed,
+     object: transform_legacy/models/country_revenue.sql, table: inv_io, where: {kind: write},
+     expect_row: {resolved: false}}
+  - {id: I-NOT-dbt-generic-sql, step: inventory, expect: not_report,
+     title: "dbt's Jinja SQL is read once, by the dbt reader, not again as plain SQL",
+     object: transform/models/marts/customer_orders.sql, table: inv_io, where: {api: "%sql SELECT"}, expect_row: {kind: read}}

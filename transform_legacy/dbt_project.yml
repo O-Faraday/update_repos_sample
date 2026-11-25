@@ -1,0 +1,8 @@
+# Older dbt project of the sample (synthetic): it renames its schemas with its own macro.
+name: sample_legacy
+version: "1.0.0"
+profile: sample_shop
+models:
+  sample_legacy:
+    +materialized: table
+    +schema: reporting

@@ -6,11 +6,15 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 
 | Id | Expect | Situation | Where | What | Result |
 |---|---|---|---|---|---|
+| R-DBT-006-token | report | Token written in profiles.yml (dev target; ci reads it with env_var) | `transform/profiles.yml` | DBT-006 |  |
 | R-SEC-001-password | report | Password written in a notebook | `src/ingest/load_customers.py` | SEC-001 |  |
 | R2-BUNDLE-005-prod | report | Production target without run_as a service principal | `bundle:update_repos_sample` | BUNDLE-005 |  |
 | R2-SEC-001-partner | report | API secret written in a notebook | `src/partners/export_partner.py` | SEC-001 |  |
 | R-PII-001-phone | report | Personal column without a mask (phone; email is masked) | `table:demo.update_repos_sample.customers` | PII-001 |  |
 | R-BUNDLE-002-paths | report | Include that matches no file and prod notebook not in the repository | `bundle:update_repos_sample` | BUNDLE-002 |  |
+| R-DBT-002-merge-key | report | Incremental merge without unique_key duplicates a re-run day | `transform/models/marts/daily_orders.sql` | DBT-002 |  |
+| R-DBT-003-untested | report | Two marts models without any data test | `transform/dbt_project.yml` | DBT-003 |  |
+| R-DBT-004-freshness | report | Customers source without freshness (orders has one) | `transform/dbt_project.yml` | DBT-004 |  |
 | R-IO-001-swallow | report | Write in a try whose except swallows the error | `src/ingest/load_orders.py` | IO-001 |  |
 | R-IO-002-genai | report | Vector search and model call without error handling | `src/genai/ask_policy.py` | IO-002 |  |
 | R-IO-002-http | report | HTTP call without error handling | `src/ingest/load_customers.py` | IO-002 |  |
@@ -30,6 +34,7 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | R2-IO-005-autoloader | report | Auto Loader stream without checkpoint | `src/ingest/autoload_returns.py` | IO-005 |  |
 | R2-PIPE-001-dlt | report | Python pipeline table without expectations | `src/pipeline/silver_orders.py` | PIPE-001 |  |
 | R-BUNDLE-003-manual | report | Job of the project outside its bundle | `job:sample_manual_export` | BUNDLE-003 |  |
+| R-DBT-007-macro | report | The legacy project renames its schemas with its own generate_schema_name | `transform_legacy/dbt_project.yml` | DBT-007 |  |
 | R-JOB-003-ingest | report | Job never run and not scheduled | `job:ingest` | JOB-003 |  |
 | R-JOB-004-ingest | report | Job without retries | `job:ingest` | JOB-004 |  |
 | R-JOB-005-manual | report | Job created by hand | `job:sample_manual_export` | JOB-005 |  |
@@ -40,7 +45,9 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | R-CODE-003-collect | report | Spark cache | `src/legacy/old_etl.py` | CODE-003 |  |
 | R2-CODE-003-report | report | Whole table collected to the driver | `src/reports/customer_report.py` | CODE-003 |  |
 | R-CODE-002-copy | report | Copied code | `src/legacy/old_etl_copy.py` | CODE-002 |  |
+| R-DBT-001-hard-coded | report | Model reads the customers table by its name | `transform/models/marts/customer_orders.sql` | DBT-001 |  |
 | R-CODE-001-legacy | report | DBFS mount | `src/legacy/old_etl.py` | CODE-001 |  |
+| R-DBT-005-adapter | report | dbt-databricks pinned below 1.6.0 | `transform/requirements.txt` | DBT-005 |  |
 | R-LIB-001-versions | report | pandas pinned to two versions | `project` | LIB-001 |  |
 | R2-CODE-001-registry | report | Workspace model registry instead of Unity Catalog | `src/ml/train_model.py` | CODE-001 |  |
 | R-NOT-JOB-006-dev | must not report | Development job run as its developer | `job:ingest` | JOB-006 |  |
@@ -60,6 +67,10 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | R-NOT-GOV-001-policies | must not report | Documented table | `table:demo.update_repos_sample.policies` | GOV-001 |  |
 | R2-NOT-GOV-001-gold | must not report | Table and columns commented | `table:demo.update_repos_sample.orders_gold_clean` | GOV-001 |  |
 | R2-NOT-CODE-003-bounded | must not report | toPandas after a limit on the same line | `src/clean/register_model.py` | CODE-003 |  |
+| R-NOT-DBT-001-ref | must not report | Model that reads only through ref() | `transform/models/marts/orders_current.sql` | DBT-001 |  |
+| R-NOT-DBT-002-keyed | must not report | Incremental merge on unique_key order_id | `transform/models/marts/orders_current.sql` | DBT-002 |  |
+| R-NOT-DBT-003-tested | must not report | Every model of the legacy project is tested | `transform_legacy/dbt_project.yml` | DBT-003 |  |
+| R-NOT-DBT-007-default | must not report | The main project keeps dbt's default naming | `transform/dbt_project.yml` | DBT-007 |  |
 
 ## Code review (model)
 
@@ -113,6 +124,11 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | I-ai-query | report | ai_query in SQL | `src/genai/ask_policy.py` | `inv_io`: target = databricks-meta-llama-3-3-70b-instruct |  |
 | I-bundle-prod | report | Prod-only job declared with a notebook not in the repository | `job:legacy_nightly` | `inv_bundle`: target = prod |  |
 | I-cross-file-llm | report | Model client built in another file (get_llm) | `src/genai/ask_policy.py` | `inv_io`: target = databricks-meta-llama-3-3-70b-instruct, resolved = True |  |
+| I-dbt-custom-schema | report | A marts model lands in <target schema>_marts, in the catalog of the profile's target | `transform/models/marts/daily_orders.sql` | `inv_io`: kind = write, target = demo.update_repos_sample_marts.daily_orders, mode = merge, resolved = True |  |
+| I-dbt-hard-coded | report | The table read by its name joins the lineage | `transform/models/marts/customer_orders.sql` | `inv_io`: target = demo.update_repos_sample.customers, line = 7 |  |
+| I-dbt-macro-unresolved | report | With an overridden naming macro the model's table is left unresolved | `transform_legacy/models/country_revenue.sql` | `inv_io`: resolved = False |  |
+| I-dbt-ref | report | ref() read as the view of the staging model | `transform/models/marts/orders_current.sql` | `inv_io`: target = demo.update_repos_sample.stg_customers, resolved = True |  |
+| I-dbt-source-identifier | report | A source table read under its identifier | `transform/models/staging/stg_orders.sql` | `inv_io`: target = demo.update_repos_sample.orders_raw, resolved = True |  |
 | I-function | report | UC function of the project collected | `function:demo.update_repos_sample.normalize_country` | `inv_nodes`: status = present |  |
 | I-model-code | report | MLflow model from code | `src/genai/agent_driver.py` | `inv_links`: found = True |  |
 | I-model-config | report | Configuration of the model from code | `src/genai/agent.py` | `inv_links`: found = True |  |
@@ -123,6 +139,7 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | I-sh-url | report | URL called from a %sh cell | `src/genai/agent_driver.py` | `inv_io`: target = https://docs.example.invalid/policies/latest.json |  |
 | I-use-catalog | report | One-level name completed by USE CATALOG and USE SCHEMA | `src/ingest/load_customers.py` | `inv_io`: target = demo.update_repos_sample.customers, resolved = True |  |
 | I-widgets | report | Table name built from widgets and f-strings | `src/ingest/load_orders.py` | `inv_io`: target = demo.update_repos_sample.orders_raw, resolved = True |  |
+| I-NOT-dbt-generic-sql | must not report | dbt's Jinja SQL is read once, by the dbt reader, not again as plain SQL | `transform/models/marts/customer_orders.sql` | `inv_io`: kind = read |  |
 
 ## Target design (step 4)
 
@@ -165,6 +182,7 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 |---|---|---|---|---|---|
 | P-dag-repos-path | report | Notebook run from a hand-made Git folder | `airflow:sample_nightly` | task_key = customer_report, kind = notebook, runnable = False, depends_on = kpis |  |
 | P-bundle-order | report | The bundle's ingest tasks run in their order | `job:ingest` | task_key = load_customers, kind = notebook, runnable = True, depends_on = load_orders |  |
+| P-dag-dbt | report | The DAG's dbt build is listed for a person to check | `airflow:sample_nightly` | task_key = dbt_build, kind = dbt, runnable = False, depends_on = ingest |  |
 | P-dag-outside | report | Bash and Python tasks run in Airflow and are only listed | `airflow:sample_nightly` | task_key = fetch_feed, kind = airflow, runnable = False, outside = True |  |
 | P-dag-python-outside | report | The Python check of the feed is only listed | `airflow:sample_nightly` | task_key = check_feed, runnable = False, outside = True, depends_on = fetch_feed |  |
 | P-dag-runnow-bundle | report | The DAG triggers the bundle's job by name (dev prefix) and it is tested once with the bundle | `airflow:sample_nightly` | task_key = ingest, kind = run_job, runnable = False, outside = True |  |
@@ -194,3 +212,6 @@ Written to Databricks guidance: anything reported on them is a false positive.
 - `src/clean/stream_events.py`
 - `data/setup_clean.sql`
 - `resources/clean_jobs.yml`
+- `transform/models/staging/stg_orders.sql`
+- `transform/models/staging/stg_customers.sql`
+- `transform/models/marts/orders_current.sql`

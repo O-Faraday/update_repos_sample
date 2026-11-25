@@ -1,0 +1,11 @@
+sources:
+  - name: raw
+    database: demo
+    schema: update_repos_sample
+    loaded_at_field: order_ts
+    tables:
+      - name: orders
+        identifier: orders_raw
+        freshness: {warn_after: {count: 1, period: day}, error_after: {count: 2, period: day}}
+      # No freshness: a late customers load goes unnoticed (DBT-004).
+      - name: customers

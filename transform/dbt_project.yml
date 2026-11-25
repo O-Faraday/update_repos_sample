@@ -1,0 +1,15 @@
+# dbt project of the sample (synthetic). Read by dbx_modernizer, never run by it.
+# Staging models are views in the target schema; marts are tables in <target schema>_marts.
+name: sample_shop
+version: "1.0.0"
+profile: sample_shop
+model-paths: [models]
+test-paths: [tests]
+
+models:
+  sample_shop:
+    staging:
+      +materialized: view
+    marts:
+      +materialized: table
+      +schema: marts

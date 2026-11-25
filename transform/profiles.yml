@@ -1,0 +1,19 @@
+# Synthetic: the host and the token are fake.
+sample_shop:
+  target: dev
+  outputs:
+    dev:
+      type: databricks
+      catalog: demo
+      schema: update_repos_sample
+      host: sample.cloud.databricks.example
+      http_path: /sql/1.0/warehouses/sample
+      # Written in the repository (DBT-006): run dbt as a job task, or read it with env_var().
+      token: sample-not-a-real-token
+    ci:
+      type: databricks
+      catalog: demo
+      schema: update_repos_sample_ci
+      host: sample.cloud.databricks.example
+      http_path: /sql/1.0/warehouses/sample
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"

@@ -1,0 +1,13 @@
+models:
+  - name: stg_orders
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: country
+        data_tests:
+          - accepted_values:
+              arguments: {values: [FR, DE, ES, IT, BE]}
+  - name: stg_customers
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
