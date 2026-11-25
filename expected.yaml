@@ -343,10 +343,15 @@ cases:
   - {id: U-known-bug, step: unit_tests, expect: report, title: The project's known bug fails before and after (not the rewrite's),
      object: tests/test_pricing.py, where: {test: "tests.test_pricing::test_normalize_country_trims_spaces"},
      expect_row: {verdict: still_failing}}
-  - {id: U-pandas3-regression, step: unit_tests, expect: report, level: 7,
-     title: "Upgrade of pandas 2 to 3 (6b) breaks a check written for object dtype: a regression that blocks the delivery",
+  - {id: U-pandas3-adapted, step: unit_tests, expect: report, level: 7,
+     title: "Upgrade of pandas 2 to 3 (6b): with is_text_column adapted by the code model, the text check still passes",
      object: tests/test_frames.py, where: {test: "tests.test_frames::test_country_is_text"},
-     expect_row: {before: passed, after: failed, verdict: regressions}}
+     expect_row: {before: passed, after: passed}}
+  - {id: W-adapt-frames, step: rewrite, expect: report, level: 7, rule: ADAPT,
+     title: "is_text_column adapted to pandas 3, where text columns are of the str dtype, not object",
+     object: src/common/frames.py, diff: '^\+.*(is_string_dtype|StringDtype|pd\.api\.types|"str"|\bstr\b)'}
+  - {id: W-NOT-adapt-tests, step: rewrite, expect: not_report, rule: ADAPT,
+     title: The code model never changes the project's tests, object: tests/test_frames.py, diff: '.'}
   - {id: W-upgrade-pandas, step: rewrite, expect: report, level: 7, rule: UPGRADE,
      title: pandas pinned to the latest stable version that installs with the rest (6b),
      object: requirements.txt, diff: '^\+pandas==3\.'}
