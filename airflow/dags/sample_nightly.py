@@ -57,14 +57,23 @@ with DAG(dag_id="sample_nightly", start_date=datetime(2026, 1, 1), schedule="0 2
         task_id="export_partner", databricks_conn_id=CONN,
         json={"notebook_task": {"notebook_path": Variable.get("sample_files") + "/src/partners/export_partner"}})
 
-    # The dbt project of the repository, built on a SQL warehouse from the Git repository: listed, not
-    # replayed (the integration test does not run dbt tasks yet).
+    # The dbt project of the repository, built on a SQL warehouse from the Git repository: replayed on a
+    # sandboxed copy of transform/ (the project's files, as rewritten).
+    git = {"git_url": "https://github.com/O-Faraday/update_repos_sample", "git_provider": "gitHub",
+           "git_branch": "main"}
     dbt_build = DatabricksSubmitRunOperator(
         task_id="dbt_build", databricks_conn_id=CONN,
-        json={"git_source": {"git_url": "https://github.com/O-Faraday/update_repos_sample",
-                             "git_provider": "gitHub", "git_branch": "main"},
+        json={"git_source": git,
               "dbt_task": {"project_directory": "transform", "commands": ["dbt deps", "dbt build"],
+                           "warehouse_id": "{{ var.value.sample_warehouse_id }}"}})
+    # The older project names its schemas with its own macro: where it writes is not known, so it is
+    # listed for a person to check, not replayed.
+    dbt_legacy = DatabricksSubmitRunOperator(
+        task_id="dbt_legacy", databricks_conn_id=CONN,
+        json={"git_source": git,
+              "dbt_task": {"project_directory": "transform_legacy", "commands": ["dbt run"],
                            "warehouse_id": "{{ var.value.sample_warehouse_id }}"}})
 
     fetch_feed >> check_feed >> ingest >> [kpis, purge_day, dbt_build]
+    dbt_build >> dbt_legacy
     kpis >> report >> export

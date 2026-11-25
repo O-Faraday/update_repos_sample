@@ -180,9 +180,10 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 
 | Id | Expect | Situation | Where | What | Result |
 |---|---|---|---|---|---|
+| P-dag-dbt-naming-macro | report | The legacy dbt project names its schemas with its own macro | `airflow:sample_nightly` | task_key = dbt_legacy, kind = dbt, runnable = False, depends_on = dbt_build |  |
 | P-dag-repos-path | report | Notebook run from a hand-made Git folder | `airflow:sample_nightly` | task_key = customer_report, kind = notebook, runnable = False, depends_on = kpis |  |
 | P-bundle-order | report | The bundle's ingest tasks run in their order | `job:ingest` | task_key = load_customers, kind = notebook, runnable = True, depends_on = load_orders |  |
-| P-dag-dbt | report | The DAG's dbt build is listed for a person to check | `airflow:sample_nightly` | task_key = dbt_build, kind = dbt, runnable = False, depends_on = ingest |  |
+| P-dag-dbt | report | The DAG's dbt build (Git source, relative project directory) is replayed on a copy of transform/ | `airflow:sample_nightly` | task_key = dbt_build, kind = dbt, runnable = True, depends_on = ingest |  |
 | P-dag-outside | report | Bash and Python tasks run in Airflow and are only listed | `airflow:sample_nightly` | task_key = fetch_feed, kind = airflow, runnable = False, outside = True |  |
 | P-dag-python-outside | report | The Python check of the feed is only listed | `airflow:sample_nightly` | task_key = check_feed, runnable = False, outside = True, depends_on = fetch_feed |  |
 | P-dag-runnow-bundle | report | The DAG triggers the bundle's job by name (dev prefix) and it is tested once with the bundle | `airflow:sample_nightly` | task_key = ingest, kind = run_job, runnable = False, outside = True |  |

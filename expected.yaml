@@ -374,8 +374,12 @@ cases:
   - {id: P-NOT-dag-runnow-twice, step: integration_plan, expect: not_report,
      title: The triggered job's tasks are not replayed a second time under the DAG,
      object: airflow:sample_nightly, where: {task_key: ingest.load_orders}, expect_row: {kind: notebook}}
-  - {id: P-dag-dbt, step: integration_plan, expect: report, title: The DAG's dbt build is listed for a person to check, not replayed,
-     object: airflow:sample_nightly, where: {task_key: dbt_build}, expect_row: {kind: dbt, runnable: false, depends_on: ingest}}
+  - {id: P-dag-dbt, step: integration_plan, expect: report,
+     title: "The DAG's dbt build (Git source, relative project directory) is replayed on a copy of transform/",
+     object: airflow:sample_nightly, where: {task_key: dbt_build}, expect_row: {kind: dbt, runnable: true, depends_on: ingest}}
+  - {id: P-dag-dbt-naming-macro, step: integration_plan, expect: report, level: 3,
+     title: The legacy dbt project names its schemas with its own macro, so its run is listed for a person to check,
+     object: airflow:sample_nightly, where: {task_key: dbt_legacy}, expect_row: {kind: dbt, runnable: false, depends_on: dbt_build}}
 
   # --- dbt projects (transform/, transform_legacy/): read, never run --------------------------------------
   - {id: R-DBT-001-hard-coded, step: rules, expect: report, level: 6, rule: DBT-001,
