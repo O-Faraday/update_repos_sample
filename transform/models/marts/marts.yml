@@ -1,0 +1,5 @@
+models:
+  - name: customer_orders
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]

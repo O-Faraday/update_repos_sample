@@ -1,2 +1,0 @@
-# Pinned below 1.6.0, the minimum Databricks recommends (DBT-005).
-dbt-databricks==1.5.2

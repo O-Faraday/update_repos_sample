@@ -1,431 +1,126 @@
-# The expected answers of this evaluation project (format: dbx_modernizer, src/dbx_modernizer/evaluation/cases.py).
+# What dbx_modernizer should find in this example (format: src/dbx_modernizer/evaluation/cases.py of the agent).
 # EXPECTED.md is generated from this file: edit here, then render.
-# Objects: a repository path, table:<name>, job:<bundle key or job name>, bundle:<name>, endpoint:<name>,
-# index:<name>, function:<name>, project.
-version: 1
+# Objects: a repository path, table:<name>, job:<bundle key or job name>, bundle:<name>, volume:<c.s.v>,
+# airflow_dag:<dag_id>, project.
+# The larger evaluation set of earlier versions is the tag eval-v1 of this repository.
+version: 2
 project: update_repos_sample
 
 # Written to Databricks guidance: anything reported on them is a false positive.
 clean_files:
-  - src/clean/call_partner_api.py
-  - src/clean/clean_events_tz.py
-  - src/clean/dates.py
-  - src/clean/gold_kpis_pipeline.py
-  - src/clean/ingest_orders_autoloader.py
-  - src/clean/kpis_by_country.py
-  - src/clean/logging_setup.py
-  - src/clean/merge_orders_current.py
-  - src/clean/overwrite_one_day.py
-  - src/clean/register_model.py
-  - src/clean/report_parametrized.py
-  - src/clean/safe_casts.sql
-  - src/clean/settings.py
-  - src/clean/silver_orders_pipeline.sql
-  - src/clean/stream_events.py
-  - data/setup_clean.sql
-  - resources/clean_jobs.yml
   - transform/models/staging/stg_orders.sql
   - transform/models/staging/stg_customers.sql
-  - transform/models/marts/orders_current.sql
+  - transform/models/marts/customer_orders.sql
+  - tests/test_frames.py
 
 cases:
-  # --- Deterministic rules: must report -------------------------------------------------------------
-  - {id: R-SEC-001-password, step: rules, expect: report, level: 0, rule: SEC-001,
-     title: Password written in a notebook, object: src/ingest/load_customers.py}
-  - {id: R-PII-001-phone, step: rules, expect: report, level: 1, rule: PII-001,
-     title: Personal column without a mask (phone; email is masked), object: table:demo.update_repos_sample.customers}
-  - {id: R-IO-001-swallow, step: rules, expect: report, level: 2, rule: IO-001,
+  # --- Step 1, inventory --------------------------------------------------------------------------------------
+  - {id: I-widgets, step: inventory, expect: report, title: Volume path built from widgets and an f-string,
+     object: src/ingest/load_orders.py, table: inv_io, where: {api: spark.read.load},
+     expect_row: {target: /Volumes/demo/update_repos_sample/raw/orders, resolved: true}}
+  - {id: I-dag, step: inventory, expect: report, title: The Airflow DAG is an object of the graph,
+     object: airflow_dag:shop_nightly, table: inv_nodes, expect_row: {status: present, layer: 2-orchestration}}
+  - {id: I-inputs, step: inventory, expect: report, title: The raw files the job loads are in the volume,
+     object: volume:demo.update_repos_sample.raw, table: inv_facts, where: {metric: data_source_files},
+     expect_row: {probe: data_sources}}
+
+  # --- Step 2, rules: must report -----------------------------------------------------------------------------
+  - {id: R-SEC-001, step: rules, expect: report, level: 0, rule: SEC-001,
+     title: Password written in a notebook run by hand, object: src/ops/export_partner.py}
+  - {id: R-BUNDLE-005, step: rules, expect: report, level: 0, rule: BUNDLE-005,
+     title: Production target without run_as a service principal, object: bundle:update_repos_sample}
+  - {id: R-DBT-006, step: rules, expect: report, level: 0, rule: DBT-006,
+     title: Token written in the dbt profile, object: transform/profiles.yml}
+  - {id: R-PII-001, step: rules, expect: report, level: 1, rule: PII-001,
+     title: Email and phone without a column mask, object: table:demo.update_repos_sample.customers}
+  - {id: R-IO-001, step: rules, expect: report, level: 2, rule: IO-001,
      title: Write in a try whose except swallows the error, object: src/ingest/load_orders.py}
-  - {id: R-IO-002-http, step: rules, expect: report, level: 2, rule: IO-002,
-     title: HTTP call without error handling, object: src/ingest/load_customers.py}
-  - {id: R-IO-002-genai, step: rules, expect: report, level: 2, rule: IO-002,
-     title: Vector search and model call without error handling, object: src/genai/ask_policy.py}
-  - {id: R-IO-003-timeout, step: rules, expect: report, level: 2, rule: IO-003,
-     title: HTTP call without timeout, object: src/ingest/load_customers.py}
-  - {id: R-IO-004-append, step: rules, expect: report, level: 2, rule: IO-004,
-     title: Append write, not idempotent, object: src/ingest/load_orders.py}
-  - {id: R-IO-005-checkpoint, step: rules, expect: report, level: 2, rule: IO-005,
-     title: Stream without checkpoint, object: src/ingest/stream_events.py}
-  - {id: R-IO-006-schema, step: rules, expect: report, level: 2, rule: IO-006,
+  - {id: R-IO-004, step: rules, expect: report, level: 2, rule: IO-004,
+     title: "Append write, not idempotent", object: src/ingest/load_orders.py}
+  - {id: R-IO-006, step: rules, expect: report, level: 2, rule: IO-006,
      title: CSV read without a schema, object: src/ingest/load_orders.py}
-  - {id: R-LIB-002-conflict, step: rules, expect: report, level: 2, rule: LIB-002,
-     title: Libraries that cannot be installed together (langchain-core 0.3 with pydantic 1),
-     object: src/genai/ask_policy.py}
-  - {id: R-PIPE-001-expectations, step: rules, expect: report, level: 2, rule: PIPE-001,
-     title: Pipeline table without expectations, object: src/pipeline/bronze_orders.sql}
-  - {id: R-BUNDLE-002-paths, step: rules, expect: report, level: 2, rule: BUNDLE-002,
-     title: Include that matches no file and prod notebook not in the repository, object: bundle:update_repos_sample}
-  - {id: R-REF-001-index, step: rules, expect: report, level: 2, rule: REF-001,
-     title: Vector index that does not exist, object: index:demo.update_repos_sample.policy_index}
-  - {id: R-REF-001-endpoint, step: rules, expect: report, level: 2, rule: REF-001,
-     title: Serving endpoint that does not exist, object: endpoint:sample-shipping-endpoint}
-  - {id: R-REF-001-hive, step: rules, expect: report, level: 2, rule: REF-001,
-     title: Hive metastore table that does not exist, object: table:hive_metastore.default.orders_legacy}
-  - {id: R-REF-001-notebook, step: rules, expect: report, level: 2, rule: REF-001,
-     title: dbutils.notebook.run of a notebook not in the repository, object: src/genai/evaluate_agent}
-  - {id: R-JOB-003-ingest, step: rules, expect: report, level: 3, rule: JOB-003,
-     title: Job never run and not scheduled, object: job:ingest}
-  - {id: R-JOB-004-ingest, step: rules, expect: report, level: 3, rule: JOB-004,
-     title: Job without retries, timeout or failure notification, object: job:ingest}
-  - {id: R-JOB-005-manual, step: rules, expect: report, level: 3, rule: JOB-005,
-     title: Job created by hand, not from version control, object: job:sample_manual_export}
-  - {id: R-BUNDLE-003-manual, step: rules, expect: report, level: 3, rule: BUNDLE-003,
-     title: Job of the project outside its bundle, object: job:sample_manual_export}
-  - {id: R-GOV-001-orders, step: rules, expect: report, level: 4, rule: GOV-001,
-     title: Table without comment, object: table:demo.update_repos_sample.orders_raw}
-  - {id: R-GOV-001-events, step: rules, expect: report, level: 4, rule: GOV-001,
-     title: Table comment but no column comment, object: table:demo.update_repos_sample.events_raw}
-  - {id: R-GOV-002-owner, step: rules, expect: report, level: 4, rule: GOV-002,
-     title: Table owned by a person, object: table:demo.update_repos_sample.policies}
+  - {id: R-DBT-002, step: rules, expect: report, level: 2, rule: DBT-002,
+     title: Incremental model merged without unique_key, object: transform/models/marts/daily_revenue.sql}
+  - {id: R-DBT-003, step: rules, expect: report, level: 2, rule: DBT-003,
+     title: A model without tests, object: transform/dbt_project.yml}
+  - {id: R-DBT-004, step: rules, expect: report, level: 2, rule: DBT-004,
+     title: A source without freshness, object: transform/dbt_project.yml}
+  - {id: R-JOB-004, step: rules, expect: report, level: 3, rule: JOB-004,
+     title: "Job without retries, timeout or failure notification", object: job:ingest}
+  - {id: R-GOV-001, step: rules, expect: report, level: 4, rule: GOV-001,
+     title: Table without description, object: table:demo.update_repos_sample.orders_raw}
+  - {id: R-CODE-003-udf, step: rules, expect: report, level: 5, rule: CODE-003,
+     title: Python UDF where a native function exists, object: src/ingest/load_customers.py}
   - {id: R-CODE-003-collect, step: rules, expect: report, level: 5, rule: CODE-003,
-     title: Spark cache, Python UDF, hard-coded executor memory, collect to the driver, object: src/legacy/old_etl.py}
-  - {id: R-CODE-002-copy, step: rules, expect: report, level: 6, rule: CODE-002,
-     title: Copied code, object: src/legacy/old_etl_copy.py}
-  - {id: R-CODE-001-legacy, step: rules, expect: report, level: 7, rule: CODE-001,
-     title: DBFS mount, /mnt paths, Hive metastore, RDD, object: src/legacy/old_etl.py}
-  - {id: R-LIB-001-versions, step: rules, expect: report, level: 7, rule: LIB-001,
-     title: pandas pinned to two versions, object: project}
+     title: Whole table collected to the driver, object: src/prepare/clean_orders.py}
+  - {id: R-LIB-001, step: rules, expect: report, level: 7, rule: LIB-001,
+     title: pandas pinned to two versions (requirements.txt and a notebook), object: project}
 
-  # --- Deterministic rules: must not report ----------------------------------------------------------
-  - {id: R-NOT-GOV-001-policies, step: rules, expect: not_report, level: 4, rule: GOV-001,
-     title: Documented table, object: table:demo.update_repos_sample.policies}
-  - {id: R-NOT-GOV-001-customers, step: rules, expect: not_report, level: 4, rule: GOV-001,
-     title: Documented table, object: table:demo.update_repos_sample.customers}
-  - {id: R-NOT-BUNDLE-003-platform, step: rules, expect: not_report, level: 3, rule: BUNDLE-003,
-     title: Endpoint served by Databricks, used by the code, object: endpoint:databricks-meta-llama-3-3-70b-instruct}
-  - {id: R-NOT-REF-001-created, step: rules, expect: not_report, level: 2, rule: REF-001,
-     title: Table the notebooks create themselves, object: table:demo.update_repos_sample.customer_contacts}
-  - {id: R-NOT-REF-001-stream, step: rules, expect: not_report, level: 2, rule: REF-001,
-     title: Table a stream creates, object: table:demo.update_repos_sample.events_clean}
-  - {id: R-NOT-IO-004-replace, step: rules, expect: not_report, level: 2, rule: IO-004,
-     title: INSERT right after CREATE OR REPLACE TABLE of the same table, object: data/setup.sql}
-  - {id: R-NOT-JOB-006-dev, step: rules, expect: not_report, level: 0, rule: JOB-006,
-     title: Development job run as its developer, object: job:ingest}
+  # --- Step 2, rules: must not report ---------------------------------------------------------------------------
+  - {id: R-NOT-IO-007, step: rules, expect: not_report, level: 2, rule: IO-007,
+     title: The raw files the job reads are there, object: volume:demo.update_repos_sample.raw}
+  - {id: R-NOT-IO-006, step: rules, expect: not_report, level: 2, rule: IO-006,
+     title: CSV read with a schema, object: src/ingest/load_customers.py}
+  - {id: R-NOT-DBT-002, step: rules, expect: not_report, level: 2, rule: DBT-002,
+     title: Incremental model merged on its key, object: transform/models/marts/customer_orders.sql}
+  - {id: R-NOT-REF-001, step: rules, expect: not_report, level: 2, rule: REF-001,
+     title: Every object the code uses exists, object: table:demo.update_repos_sample.orders_raw}
 
-  # --- Inventory ---------------------------------------------------------------------------------------
-  - {id: I-bundle-prod, step: inventory, expect: report, title: Prod-only job declared with a notebook not in the repository,
-     object: job:legacy_nightly, table: inv_bundle, expect_row: {target: prod}}
-  - {id: I-widgets, step: inventory, expect: report, title: Table name built from widgets and f-strings,
-     object: src/ingest/load_orders.py, table: inv_io, where: {line: 25},
-     expect_row: {target: demo.update_repos_sample.orders_raw, resolved: true}}
-  - {id: I-use-catalog, step: inventory, expect: report, title: One-level name completed by USE CATALOG and USE SCHEMA,
-     object: src/ingest/load_customers.py, table: inv_io, where: {line: 22},
-     expect_row: {target: demo.update_repos_sample.customers, resolved: true}}
-  - {id: I-cross-file-llm, step: inventory, expect: report, title: Model client built in another file (get_llm),
-     object: src/genai/ask_policy.py, table: inv_io, where: {line: 25},
-     expect_row: {target: databricks-meta-llama-3-3-70b-instruct, resolved: true}}
-  - {id: I-ai-query, step: inventory, expect: report, title: ai_query in SQL,
-     object: src/genai/ask_policy.py, table: inv_io, where: {api: "%sql ai_query"},
-     expect_row: {target: databricks-meta-llama-3-3-70b-instruct}}
-  - {id: I-run-settings, step: inventory, expect: report, title: "%run of a shared settings notebook",
-     object: src/genai/agent_driver.py, table: inv_links, where: {kind: run}, expect_row: {found: true}}
-  - {id: I-run-names, step: inventory, expect: report, title: Names from the %run notebook resolve the table read,
-     object: src/genai/agent_driver.py, table: inv_io, where: {api: spark.table},
-     expect_row: {target: demo.update_repos_sample.policies, resolved: true}}
-  - {id: I-pip-r, step: inventory, expect: report, title: "%pip install -r of the project's requirements",
-     object: src/genai/agent_driver.py, table: inv_links, where: {kind: requirements}, expect_row: {found: true}}
-  - {id: I-model-code, step: inventory, expect: report, title: MLflow model from code,
-     object: src/genai/agent_driver.py, table: inv_links, where: {kind: model_code, target: agent.py},
-     expect_row: {found: true}}
-  - {id: I-model-config, step: inventory, expect: report, title: Configuration of the model from code,
-     object: src/genai/agent.py, table: inv_links, where: {kind: config}, expect_row: {found: true}}
-  - {id: I-notebook-run-missing, step: inventory, expect: report, title: Notebook run that is not in the repository,
-     object: src/genai/agent_driver.py, table: inv_links, where: {kind: notebook_run}, expect_row: {found: false}}
-  - {id: I-sh-url, step: inventory, expect: report, title: URL called from a %sh cell,
-     object: src/genai/agent_driver.py, table: inv_io, where: {api: "%sh"},
-     expect_row: {target: "https://docs.example.invalid/policies/latest.json"}}
-  - {id: I-function, step: inventory, expect: report, title: UC function of the project collected,
-     object: function:demo.update_repos_sample.normalize_country, table: inv_nodes, expect_row: {status: present}}
-
-  # --- Code review (model): problems the rules do not see ------------------------------------------------
-  - {id: C-stream-trigger, step: code_review, expect: report, level: 3, lines: [9, 12],
-     title: Stream without a trigger (the default is not supported on serverless),
-     object: src/ingest/stream_events.py, topic: 'trigger|availableNow|serverless'}
-  - {id: C-json-schema, step: code_review, expect: report, level: 2, lines: [14, 15],
-     title: DataFrame built from an API response without schema or validation,
-     object: src/ingest/load_customers.py, topic: 'schema|validat|json'}
-  - {id: C-config-none, step: code_review, expect: report, level: 2, lines: [9, 9],
-     title: Endpoint read from the model config without a check (None if the key is missing),
-     object: src/genai/agent.py, topic: 'config|none|missing'}
-  - {id: C-ai-query-scan, step: code_review, expect: report, level: 5, lines: [36, 39],
-     title: ai_query over a whole table on each run,
-     object: src/genai/ask_policy.py, topic: 'scan|every row|all rows|whole table|limit|incremental'}
-  # Repeats of a rule, or wrong: must not be reported.
+  # --- Step 2, model reviews ----------------------------------------------------------------------------------
+  - {id: C-duplicates, step: code_review, expect: report, level: 2,
+     title: Orders appended on each run are cleaned without removing duplicates,
+     object: src/prepare/clean_orders.py, topic: 'duplicat|dedup|distinct|append'}
   - {id: C-NOT-password-repeat, step: code_review, expect: not_report, level: 0,
-     title: Hard-coded password, already reported by SEC-001, object: src/ingest/load_customers.py,
-     topic: 'password|credential'}
-  - {id: C-NOT-checkpoint-repeat, step: code_review, expect: not_report, level: 2,
-     title: Missing checkpoint, already reported by IO-005, object: src/ingest/stream_events.py, topic: 'checkpoint'}
-  - {id: C-NOT-two-level, step: code_review, expect: not_report, level: 4,
-     title: Two-level table names where the names have three levels, object: src/ingest/stream_events.py,
-     topic: 'two-level|two level'}
+     title: "The password is a rule's finding, not repeated by the model", object: src/ops/export_partner.py,
+     topic: 'password|credential|secret'}
+  - {id: A-manual-export, step: architecture, expect: report, level: 3,
+     title: "A notebook run by hand, in no job", object: src/ops/export_partner.py,
+     topic: 'manual|by hand|not scheduled|no job|orphan'}
+  - {id: A-NOT-orphan-frames, step: architecture, expect: not_report, level: 6,
+     title: The shared helpers are imported by a notebook of the job, object: src/common/frames.py,
+     topic: 'orphan|unused|not used|dead'}
 
-  # --- Architecture review (model) -------------------------------------------------------------------------
-  - {id: A-no-evaluation, step: architecture, expect: report, level: 2,
-     title: The agent is logged without an evaluation (its evaluation notebook is missing),
-     object: src/genai/agent_driver.py, topic: 'evaluat'}
-  - {id: A-no-tests, step: architecture, expect: report, level: 3, title: No automated tests in the project,
-     object: project, topic: 'test'}
-  - {id: A-hive, step: architecture, expect: report, level: 4, title: Data outside Unity Catalog (hive_metastore),
-     object: table:hive_metastore.default.orders_legacy, topic: 'hive|unity catalog'}
-  - {id: A-NOT-orphan-settings, step: architecture, expect: not_report, level: 6,
-     title: Settings notebook called orphaned while %run by agent_driver, object: src/common/settings.py,
-     topic: 'orphan|not run|not executed'}
-  - {id: A-NOT-platform-monitoring, step: architecture, expect: not_report, level: 3,
-     title: Monitoring asked of an endpoint Databricks serves, object: endpoint:databricks-meta-llama-3-3-70b-instruct,
-     topic: 'monitor'}
+  # --- Step 4, target design ----------------------------------------------------------------------------------
+  - {id: T-ingest-job, step: target_design, expect: report, level: 2,
+     title: One change for the ingest job and the code it runs, object: job:ingest, rules: [IO-001, JOB-004]}
 
-  # --- Target design (step 4) --------------------------------------------------------------------------
-  - {id: T-ingest-job, step: target_design, expect: report, level: 0,
-     title: One change for the ingest job and the code it runs,
-     object: job:ingest, rules: [SEC-001, IO-001, IO-003, JOB-004]}
-  - {id: T-genai-job, step: target_design, expect: report, level: 2, title: One change for the GenAI job,
-     object: job:genai_answers, rules: [LIB-002]}
-  - {id: T-NOT-platform, step: target_design, expect: not_report,
-     title: No change on an endpoint Databricks serves, object: endpoint:databricks-meta-llama-3-3-70b-instruct}
-
-  # --- Rewrite (step 6) ----------------------------------------------------------------------------------
-  - {id: W-secret, step: rewrite, expect: report, level: 0, rule: SEC-001, title: Password read from a secret scope,
-     object: src/ingest/load_customers.py, diff: 'dbutils\.secrets\.get\('}
-  - {id: W-timeout, step: rewrite, expect: report, level: 2, rule: IO-003, title: Timeout on the HTTP call,
-     object: src/ingest/load_customers.py, diff: 'timeout=\d+'}
+  # --- Step 6, rewrite ------------------------------------------------------------------------------------------
   - {id: W-reraise, step: rewrite, expect: report, level: 2, rule: IO-001, title: Error raised again,
      object: src/ingest/load_orders.py, diff: '^\+\s+raise'}
-  - {id: W-checkpoint, step: rewrite, expect: report, level: 2, rule: IO-005, title: Checkpoint on the stream,
-     object: src/ingest/stream_events.py, diff: 'checkpointLocation'}
   - {id: W-retries, step: rewrite, expect: report, level: 3, rule: JOB-004, title: Retries and timeouts in the bundle,
      object: resources/jobs.yml, diff: '^\+\s+max_retries:'}
-  - {id: W-repin-conflict, step: rewrite, expect: report, level: 2, rule: LIB-002,
-     title: Libraries pinned to versions that install together, object: src/genai/ask_policy.py, diff: 'pydantic==2\.'}
-
-  # =====================================================================================================
-  # Stage 2 (2026-11-24): more planted problems, and clean files written to Databricks guidance
-  # =====================================================================================================
-
-  # --- Rules: must report -----------------------------------------------------------------------------
-  - {id: R2-SEC-001-partner, step: rules, expect: report, level: 0, rule: SEC-001,
-     title: API secret written in a notebook, object: src/partners/export_partner.py}
-  - {id: R2-BUNDLE-005-prod, step: rules, expect: report, level: 0, rule: BUNDLE-005,
-     title: Production target without run_as a service principal, object: bundle:update_repos_sample}
-  - {id: R2-IO-002-partner, step: rules, expect: report, level: 2, rule: IO-002,
-     title: Partner API call without error handling, object: src/partners/export_partner.py}
-  - {id: R2-IO-003-partner, step: rules, expect: report, level: 2, rule: IO-003,
-     title: Partner API call without timeout, object: src/partners/export_partner.py}
-  - {id: R2-IO-002-agent, step: rules, expect: report, level: 2, rule: IO-002,
-     title: Model call of the agent without error handling, object: src/genai/agent.py}
-  - {id: R2-IO-005-autoloader, step: rules, expect: report, level: 2, rule: IO-005,
-     title: Auto Loader stream without checkpoint, object: src/ingest/autoload_returns.py}
-  - {id: R2-PIPE-001-dlt, step: rules, expect: report, level: 2, rule: PIPE-001,
-     title: Python pipeline table without expectations, object: src/pipeline/silver_orders.py}
-  - {id: R2-JOB-004-genai, step: rules, expect: report, level: 3, rule: JOB-004,
-     title: Job with retries and timeouts but no failure notification, object: job:genai_answers}
-  - {id: R2-CODE-003-report, step: rules, expect: report, level: 5, rule: CODE-003,
-     title: Whole table collected to the driver, object: src/reports/customer_report.py}
-  - {id: R2-CODE-001-registry, step: rules, expect: report, level: 7, rule: CODE-001,
-     title: Workspace model registry instead of Unity Catalog, object: src/ml/train_model.py}
-
-  # --- Rules: must not report (written to guidance) ------------------------------------------------------
-  - {id: R2-NOT-CODE-003-bounded, step: rules, expect: not_report, level: 5, rule: CODE-003,
-     title: toPandas after a limit on the same line, object: src/clean/register_model.py}
-  - {id: R2-NOT-IO-005-clean, step: rules, expect: not_report, level: 2, rule: IO-005,
-     title: Stream with checkpoint and availableNow, object: src/clean/stream_events.py}
-  - {id: R2-NOT-IO-005-autoloader, step: rules, expect: not_report, level: 2, rule: IO-005,
-     title: Auto Loader with schema location and checkpoint, object: src/clean/ingest_orders_autoloader.py}
-  - {id: R2-NOT-PIPE-001-sql, step: rules, expect: not_report, level: 2, rule: PIPE-001,
-     title: Materialized view with expectations, object: src/clean/silver_orders_pipeline.sql}
-  - {id: R2-NOT-PIPE-001-py, step: rules, expect: not_report, level: 2, rule: PIPE-001,
-     title: Python materialized view with expectations, object: src/clean/gold_kpis_pipeline.py}
-  - {id: R2-NOT-SEC-001-secrets, step: rules, expect: not_report, level: 0, rule: SEC-001,
-     title: Token read from a secret scope, object: src/clean/call_partner_api.py}
-  - {id: R2-NOT-IO-001-raise, step: rules, expect: not_report, level: 2, rule: IO-001,
-     title: Error raised again after the partner call, object: src/clean/call_partner_api.py}
-  - {id: R2-NOT-JOB-003-paused, step: rules, expect: not_report, level: 3, rule: JOB-003,
-     title: Job with a paused schedule, object: job:clean_orders}
-  - {id: R2-NOT-JOB-004-clean, step: rules, expect: not_report, level: 3, rule: JOB-004,
-     title: Job with retries, timeouts, failure notification and duration rule, object: job:clean_orders}
-  - {id: R2-NOT-GOV-001-gold, step: rules, expect: not_report, level: 4, rule: GOV-001,
-     title: Table and columns commented, object: table:demo.update_repos_sample.orders_gold_clean}
-
-  # --- Code review (model): must report ---------------------------------------------------------------
-  - {id: C2-sql-injection, step: code_review, expect: report, level: 0, lines: [13, 15],
-     title: Widget value pasted into SQL text (injection), object: src/reports/customer_report.py,
-     topic: 'inject|f-string|parameter marker|untrusted|sanitiz'}
-  - {id: C2-pii-logs, step: code_review, expect: report, level: 1, lines: [19, 21],
-     title: Names, emails and phones printed to the logs, object: src/reports/customer_report.py,
-     topic: 'personal|pii|email|phone|sensitive|log'}
-  - {id: C2-unpinned-pip, step: code_review, expect: report, level: 3, lines: [7, 7],
-     title: Libraries installed without versions, object: src/reports/customer_report.py,
-     topic: 'pin|version|unpinned'}
-  - {id: C2-hardcoded-date, step: code_review, expect: report, level: 3, lines: [10, 12],
-     title: Business date written in the code, object: src/reports/kpis.py,
-     topic: 'hard-?coded|fixed date|parameter|widget'}
-  - {id: C2-count-loop, step: code_review, expect: report, level: 5, lines: [16, 19],
-     title: One count per country in a loop, object: src/reports/kpis.py, topic: 'count|loop|groupBy|repeated'}
-  - {id: C2-cross-join, step: code_review, expect: report, level: 5, lines: [23, 25],
-     title: Cross join of orders and customers, object: src/reports/kpis.py, topic: 'cross|cartesian'}
-  - {id: C2-merge-key, step: code_review, expect: report, level: 2, lines: [12, 16],
-     title: MERGE on a key that is not unique (customer, not order), object: src/ingest/merge_orders.py,
-     topic: 'key|unique|duplicate|multiple'}
-  - {id: C2-overwrite-day, step: code_review, expect: report, level: 2, lines: [11, 12],
-     title: One day meant to be replaced, whole table overwritten, object: src/ingest/overwrite_daily.py,
-     topic: 'replaceWhere|whole table|entire table|all data|overwrite'}
-  - {id: C2-timezone, step: code_review, expect: report, level: 2, lines: [11, 12],
-     title: Local times parsed without a time zone (UTC on serverless), object: src/ingest/clean_events.py,
-     topic: 'time ?zone|UTC'}
-  - {id: C2-dedup-key, step: code_review, expect: report, level: 2, lines: [14, 15],
-     title: dropDuplicates without a key, object: src/ingest/clean_events.py, topic: 'dropDuplicates|duplicate'}
-  - {id: C2-ansi-cast, step: code_review, expect: report, level: 2, lines: [17, 18],
-     title: Cast that fails under ANSI mode, object: src/ingest/clean_events.py, topic: 'ANSI|try_cast|cast'}
-  - {id: C2-autoloader-schema, step: code_review, expect: report, level: 2, lines: [7, 9],
-     title: Auto Loader without a schema location, object: src/ingest/autoload_returns.py,
-     topic: 'schemaLocation|schema location|schema evolution|schema'}
-  - {id: C2-processing-time, step: code_review, expect: report, level: 5, lines: [11, 12],
-     title: ProcessingTime trigger (not supported on serverless; availableNow would do),
-     object: src/ingest/autoload_returns.py, topic: 'processingTime|availableNow|trigger|serverless'}
-  - {id: C2-dlt-module, step: code_review, expect: report, level: 7, lines: [1, 3],
-     title: Legacy dlt module instead of pyspark.pipelines, object: src/pipeline/silver_orders.py,
-     topic: 'dlt|pyspark\.pipelines|legacy|deprecated'}
-  - {id: C2-grants, step: code_review, expect: report, level: 0, lines: [2, 3],
-     title: Grants to every user of the account, object: data/grants.sql,
-     topic: 'account users|all users|every user|privilege|least'}
-  - {id: C2-external-silver, step: code_review, expect: report, level: 4, lines: [2, 5],
-     title: Silver table kept as an external table, object: data/setup_silver.sql,
-     topic: 'external|managed|location'}
-  - {id: C2-partition-small, step: code_review, expect: report, level: 5, lines: [8, 11],
-     title: Small table partitioned on a high-cardinality column, object: data/setup_silver.sql,
-     topic: 'partition|cluster'}
-  - {id: C2-function-comment, step: code_review, expect: report, level: 4, lines: [93, 99],
-     title: UC function without a comment, object: data/setup.sql, topic: 'comment|document'}
-
-  # --- Code review (model): must not report ---------------------------------------------------------------
-  - {id: C2-NOT-parameter-markers, step: code_review, expect: not_report, level: 0,
-     title: SQL with parameter markers, object: src/clean/report_parametrized.py, topic: 'inject'}
-  - {id: C2-NOT-timezone, step: code_review, expect: not_report, level: 2,
-     title: Times converted with an explicit time zone, object: src/clean/clean_events_tz.py, topic: 'time ?zone'}
-
-  # --- Architecture (model) ------------------------------------------------------------------------------
-  - {id: A2-duplicated-logic, step: architecture, expect: report, level: 6,
-     title: Revenue by country computed twice, in SQL and in Python, object: src/reports/kpis.sql,
-     topic: 'duplicat|same|twice|both'}
-  - {id: A2-hardcoded-catalog, step: architecture, expect: report, level: 6,
-     title: Catalog and schema written in many files instead of parameters, object: project,
-     topic: 'hard-?coded|catalog|parameter|configuration'}
-  - {id: A2-workspace-registry, step: architecture, expect: report, level: 7,
-     title: A model registered in the workspace registry, object: src/ml/train_model.py,
-     topic: 'registry|unity catalog'}
-
-  # --- Target design (step 4) ------------------------------------------------------------------------------
-  - {id: T2-partner, step: target_design, expect: report, level: 0, title: One change for the partner export,
-     object: src/partners/export_partner.py, rules: [SEC-001, IO-003]}
-  - {id: T2-bundle-sp, step: target_design, expect: report, level: 0,
-     title: The bundle gets a service principal for production, object: bundle:update_repos_sample,
-     rules: [BUNDLE-005]}
-
-  # --- Rewrite (step 6) ------------------------------------------------------------------------------------
-  - {id: W2-partner-secret, step: rewrite, expect: report, level: 0, rule: SEC-001,
-     title: Partner secret read from a secret scope, object: src/partners/export_partner.py,
-     diff: 'dbutils\.secrets\.get\('}
-  - {id: W2-partner-timeout, step: rewrite, expect: report, level: 2, rule: IO-003,
-     title: Timeout on the partner call, object: src/partners/export_partner.py, diff: 'timeout=\d+'}
-  - {id: W2-autoloader-checkpoint, step: rewrite, expect: report, level: 2, rule: IO-005,
-     title: Checkpoint on the Auto Loader stream, object: src/ingest/autoload_returns.py, diff: 'checkpointLocation'}
-
-  # --- Unit tests before and after the rewrite (step 6c) --------------------------------------------------
-  - {id: U-vat-unchanged, step: unit_tests, expect: report, title: A pure function untouched by the rewrite still passes,
-     object: tests/test_pricing.py, where: {test: "tests.test_pricing::test_with_vat"},
-     expect_row: {before: passed, after: passed}}
-  - {id: U-paris-day, step: unit_tests, expect: report, title: Time zone helper still passes,
-     object: tests/test_clean.py, where: {test: "tests.test_clean::test_business_day_is_in_paris_time"},
-     expect_row: {before: passed, after: passed}}
-  - {id: U-frames-upper, step: unit_tests, expect: report, title: pandas helper unaffected by pandas 3 still passes,
-     object: tests/test_frames.py, where: {test: "tests.test_frames::test_orders_frame_upper_cases_the_country"},
-     expect_row: {before: passed, after: passed}}
-  - {id: U-known-bug, step: unit_tests, expect: report, title: The project's known bug fails before and after (not the rewrite's),
-     object: tests/test_pricing.py, where: {test: "tests.test_pricing::test_normalize_country_trims_spaces"},
-     expect_row: {verdict: still_failing}}
-  - {id: U-pandas3-adapted, step: unit_tests, expect: report, level: 7,
-     title: "Upgrade of pandas 2 to 3 (6b): with is_text_column adapted by the code model, the text check still passes",
-     object: tests/test_frames.py, where: {test: "tests.test_frames::test_country_is_text"},
-     expect_row: {before: passed, after: passed}}
+  - {id: W-secret, step: rewrite, expect: report, level: 0, rule: SEC-001, title: Password read from a secret scope,
+     object: src/ops/export_partner.py, diff: 'dbutils\.secrets\.get\('}
+  - {id: W-upgrade-pandas, step: rewrite, expect: report, level: 7, rule: UPGRADE,
+     title: pandas pinned to the latest stable version that installs with the rest, object: requirements.txt,
+     diff: '^\+pandas==3\.'}
   - {id: W-adapt-frames, step: rewrite, expect: report, level: 7, rule: ADAPT,
      title: "is_text_column adapted to pandas 3, where text columns are of the str dtype, not object",
      object: src/common/frames.py, diff: '^\+.*(is_string_dtype|StringDtype|pd\.api\.types|"str"|\bstr\b)'}
   - {id: W-NOT-adapt-tests, step: rewrite, expect: not_report, rule: ADAPT,
      title: The code model never changes the project's tests, object: tests/test_frames.py, diff: '.'}
-  - {id: W-upgrade-pandas, step: rewrite, expect: report, level: 7, rule: UPGRADE,
-     title: pandas pinned to the latest stable version that installs with the rest (6b),
-     object: requirements.txt, diff: '^\+pandas==3\.'}
 
-  # --- What the integration test of a rewrite would run (step 6c), bundle and Airflow ------------------------
-  - {id: P-bundle-order, step: integration_plan, expect: report, title: The bundle's ingest tasks run in their order,
-     object: job:ingest, where: {task_key: load_customers}, expect_row: {kind: notebook, runnable: true, depends_on: load_orders}}
-  - {id: P-dag-outside, step: integration_plan, expect: report, title: Bash and Python tasks run in Airflow and are only listed,
-     object: airflow:sample_nightly, where: {task_key: fetch_feed}, expect_row: {kind: airflow, runnable: false, outside: true}}
-  - {id: P-dag-python-outside, step: integration_plan, expect: report, title: The Python check of the feed is only listed,
-     object: airflow:sample_nightly, where: {task_key: check_feed}, expect_row: {runnable: false, outside: true, depends_on: fetch_feed}}
-  - {id: P-dag-runnow-bundle, step: integration_plan, expect: report,
-     title: The DAG triggers the bundle's job by name (dev prefix) and it is tested once with the bundle,
-     object: airflow:sample_nightly, where: {task_key: ingest}, expect_row: {kind: run_job, runnable: false, outside: true}}
-  - {id: P-dag-sql-file, step: integration_plan, expect: report,
-     title: SQL file of the project named relative to the DAG is replayed as a SQL file task after the ingest,
-     object: airflow:sample_nightly, where: {task_key: kpis}, expect_row: {kind: sql_file, runnable: true, depends_on: ingest}}
-  - {id: P-dag-template, step: integration_plan, expect: report, title: "SQL with an Airflow template ({{ ds }}) is not replayed",
-     object: airflow:sample_nightly, where: {task_key: purge_day}, expect_row: {kind: sql, runnable: false}}
-  - {id: P-dag-repos-path, step: integration_plan, expect: report, level: 3,
-     title: Notebook run from a hand-made Git folder, outside the deployed project, is not replayed,
-     object: airflow:sample_nightly, where: {task_key: customer_report}, expect_row: {kind: notebook, runnable: false, depends_on: kpis}}
-  - {id: P-dag-variable, step: integration_plan, expect: report, title: Notebook path from an Airflow variable is not replayed,
-     object: airflow:sample_nightly, where: {task_key: export_partner}, expect_row: {runnable: false, depends_on: customer_report}}
-  - {id: P-NOT-dag-runnow-twice, step: integration_plan, expect: not_report,
-     title: The triggered job's tasks are not replayed a second time under the DAG,
-     object: airflow:sample_nightly, where: {task_key: ingest.load_orders}, expect_row: {kind: notebook}}
+  # --- Step 6c, unit tests --------------------------------------------------------------------------------------
+  - {id: U-frames-clean, step: unit_tests, expect: report, title: The country cleaning still passes,
+     object: tests/test_frames.py, where: {test: "tests.test_frames::test_orders_frame_cleans_the_country"},
+     expect_row: {before: passed, after: passed}}
+  - {id: U-pandas3-adapted, step: unit_tests, expect: report, level: 7,
+     title: "With is_text_column adapted to pandas 3, the text check still passes",
+     object: tests/test_frames.py, where: {test: "tests.test_frames::test_country_is_text"},
+     expect_row: {before: passed, after: passed}}
+
+  # --- Step 6c, what the integration test runs (computed, nothing is run) ---------------------------------------
+  - {id: P-job-order, step: integration_plan, expect: report, title: The job's cleaning runs after both loads,
+     object: job:ingest, where: {task_key: clean_orders}, expect_row: {kind: notebook, runnable: true}}
+  - {id: P-dag-outside, step: integration_plan, expect: report, title: The Bash task runs in Airflow and is only listed,
+     object: airflow:shop_nightly, where: {task_key: fetch_partner_rates},
+     expect_row: {kind: airflow, runnable: false, outside: true}}
+  - {id: P-dag-runnow, step: integration_plan, expect: report,
+     title: "The DAG triggers the bundle's job by name, which is tested once with the bundle",
+     object: airflow:shop_nightly, where: {task_key: ingest}, expect_row: {kind: run_job, runnable: false, outside: true}}
   - {id: P-dag-dbt, step: integration_plan, expect: report,
      title: "The DAG's dbt build (Git source, relative project directory) is replayed on a copy of transform/",
-     object: airflow:sample_nightly, where: {task_key: dbt_build}, expect_row: {kind: dbt, runnable: true, depends_on: ingest}}
-  - {id: P-dag-dbt-naming-macro, step: integration_plan, expect: report, level: 3,
-     title: The legacy dbt project names its schemas with its own macro, so its run is listed for a person to check,
-     object: airflow:sample_nightly, where: {task_key: dbt_legacy}, expect_row: {kind: dbt, runnable: false, depends_on: dbt_build}}
-
-  # --- dbt projects (transform/, transform_legacy/): read, never run --------------------------------------
-  - {id: R-DBT-001-hard-coded, step: rules, expect: report, level: 6, rule: DBT-001,
-     title: Model reads the customers table by its name, not through source(), object: transform/models/marts/customer_orders.sql}
-  - {id: R-DBT-002-merge-key, step: rules, expect: report, level: 2, rule: DBT-002,
-     title: Incremental merge without unique_key duplicates a re-run day, object: transform/models/marts/daily_orders.sql}
-  - {id: R-DBT-003-untested, step: rules, expect: report, level: 2, rule: DBT-003,
-     title: Two marts models without any data test, object: transform/dbt_project.yml}
-  - {id: R-DBT-004-freshness, step: rules, expect: report, level: 2, rule: DBT-004,
-     title: Customers source without freshness (orders has one), object: transform/dbt_project.yml}
-  - {id: R-DBT-005-adapter, step: rules, expect: report, level: 7, rule: DBT-005,
-     title: dbt-databricks pinned below 1.6.0, object: transform/requirements.txt}
-  - {id: R-DBT-006-token, step: rules, expect: report, level: 0, rule: DBT-006,
-     title: Token written in profiles.yml (dev target; ci reads it with env_var), object: transform/profiles.yml}
-  - {id: R-DBT-007-macro, step: rules, expect: report, level: 3, rule: DBT-007,
-     title: The legacy project renames its schemas with its own generate_schema_name, object: transform_legacy/dbt_project.yml}
-  - {id: R-NOT-DBT-002-keyed, step: rules, expect: not_report, rule: DBT-002,
-     title: Incremental merge on unique_key order_id, object: transform/models/marts/orders_current.sql}
-  - {id: R-NOT-DBT-001-ref, step: rules, expect: not_report, rule: DBT-001,
-     title: Model that reads only through ref(), object: transform/models/marts/orders_current.sql}
-  - {id: R-NOT-DBT-003-tested, step: rules, expect: not_report, rule: DBT-003,
-     title: Every model of the legacy project is tested, object: transform_legacy/dbt_project.yml}
-  - {id: R-NOT-DBT-007-default, step: rules, expect: not_report, rule: DBT-007,
-     title: The main project keeps dbt's default naming, object: transform/dbt_project.yml}
-  - {id: I-dbt-custom-schema, step: inventory, expect: report,
-     title: "A marts model lands in <target schema>_marts, in the catalog of the profile's target",
-     object: transform/models/marts/daily_orders.sql, table: inv_io, where: {api: dbt incremental},
-     expect_row: {kind: write, target: demo.update_repos_sample_marts.daily_orders, mode: merge, resolved: true}}
-  - {id: I-dbt-source-identifier, step: inventory, expect: report, title: A source table read under its identifier,
-     object: transform/models/staging/stg_orders.sql, table: inv_io, where: {api: dbt source},
-     expect_row: {target: demo.update_repos_sample.orders_raw, resolved: true}}
-  - {id: I-dbt-ref, step: inventory, expect: report, title: "ref() read as the view of the staging model",
-     object: transform/models/marts/orders_current.sql, table: inv_io, where: {api: dbt ref, line: 10},
-     expect_row: {target: demo.update_repos_sample.stg_customers, resolved: true}}
-  - {id: I-dbt-hard-coded, step: inventory, expect: report, title: The table read by its name joins the lineage,
-     object: transform/models/marts/customer_orders.sql, table: inv_io, where: {api: dbt hard-coded},
-     expect_row: {target: demo.update_repos_sample.customers, line: 7}}
-  - {id: I-dbt-macro-unresolved, step: inventory, expect: report,
-     title: With an overridden naming macro the model's table is left unresolved, not guessed,
-     object: transform_legacy/models/country_revenue.sql, table: inv_io, where: {kind: write},
-     expect_row: {resolved: false}}
-  - {id: I-NOT-dbt-generic-sql, step: inventory, expect: not_report,
-     title: "dbt's Jinja SQL is read once, by the dbt reader, not again as plain SQL",
-     object: transform/models/marts/customer_orders.sql, table: inv_io, where: {api: "%sql SELECT"}, expect_row: {kind: read}}
+     object: airflow:shop_nightly, where: {task_key: dbt_build}, expect_row: {kind: dbt, runnable: true, depends_on: ingest}}
+  - {id: P-NOT-dag-runnow-twice, step: integration_plan, expect: not_report,
+     title: The triggered job's tasks are not replayed a second time under the DAG,
+     object: airflow:shop_nightly, where: {task_key: ingest.load_orders}, expect_row: {kind: notebook}}

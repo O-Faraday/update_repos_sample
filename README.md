@@ -1,63 +1,59 @@
 # update_repos_sample
 
-A synthetic Databricks project to test and evaluate the dbx_modernizer agent: 116 planted
-situations and 17 clean files (`src/clean/`, written to Databricks guidance), listed in
-`expected.yaml` and rendered in [EXPECTED.md](EXPECTED.md).
-It is built to contain known problems: [EXPECTED.md](EXPECTED.md) lists what
-the agent should find, file by file. Every name, endpoint, URL and credential
-is fake.
+A small synthetic shop on Databricks, to show what the
+[dbx_modernizer](https://github.com/O-Faraday/databricks-uptodate-agent) agent does. It runs end to
+end on its own data, with a few problems planted on purpose: [EXPECTED.md](EXPECTED.md) lists what
+the agent should find, and why. Every name, value and credential is fake.
+
+## The flow
+
+```
+data/*.csv ──(copied once)──> volume raw/          Airflow: airflow/dags/nightly.py
+                                  │                    fetch_partner_rates (in Airflow)
+               job ingest (resources/jobs.yml)  <──── ingest (runs the job by name)
+                 load_orders     -> orders_raw
+                 load_customers  -> customers
+                 clean_orders    -> orders_clean    (pandas helpers: src/common/frames.py, tests/)
+                                  │
+               dbt (transform/)  <──────────────────── dbt_build
+                 staging: stg_orders, stg_customers (views)
+                 marts:   daily_revenue, customer_orders (<schema>_marts)
+
+src/ops/export_partner.py: a notebook someone runs by hand, in no job
+```
 
 ## Layout
 
 ```
-databricks.yml            bundle, variables, targets dev (default) and prod
-resources/                jobs, pipeline, schema and volume (included)
-src/common/               names and the chat model, shared by the notebooks
-src/ingest/               batch, HTTP and streaming loads
-src/genai/                vector search, model calls, ai_query
-src/legacy/               deprecated patterns, and a copy of them
-src/pipeline/             a serverless pipeline (SQL)
-manual/                   a job meant to be created by hand, outside the bundle
-airflow/dags/              a DAG scheduling the sample from Airflow (read by the agent, never run)
-transform/                a dbt project (planted dbt problems and a clean model; read, never run)
-transform_legacy/         an older dbt project that renames its schemas with its own macro
-src/clean/                clean code: anything reported here is a false positive
-src/common/pricing.py, frames.py   pure functions with unit tests (tests/)
-tests/                    unit tests: one known bug fails before and after, one test regresses
-                          when step 6b upgrades pandas 2 to 3 (step 6c must catch it)
-src/partners, src/reports, src/ml   more planted problems (stage 2)
-data/                     demo tables, UC functions and a raw file (catalog demo)
+databricks.yml        bundle, variables catalog and schema, targets dev (default) and prod
+resources/jobs.yml    the ingest job
+data/                 the raw files (orders, customers)
+src/ingest/           loads of the raw files
+src/prepare/          the cleaning, with the shared pandas helpers of src/common/
+src/ops/              a notebook run by hand
+tests/                unit tests of src/common/ (step 6 checks them before and after its changes)
+transform/            the dbt project
+airflow/dags/         the DAG that runs the job, then dbt (read by the agent, never run by it)
+expected.yaml         what the agent should find (EXPECTED.md is generated from it)
 ```
 
-## Deploy (no schedule, nothing runs)
+## Set it up
+
+Replace `demo` with a catalog of your workspace (and in `transform/profiles.yml` for a local dbt run).
 
 ```bash
-# Set the catalog of your workspace locally (not committed):
-mkdir -p .databricks/bundle/dev
-echo '{"catalog": "<catalog>"}' > .databricks/bundle/dev/variable-overrides.json
-databricks bundle deploy -t dev --profile <profile>
+databricks schemas create update_repos_sample demo --profile <profile>
+databricks volumes create demo update_repos_sample raw MANAGED --profile <profile>
+databricks fs cp data/orders.csv dbfs:/Volumes/demo/update_repos_sample/raw/orders/orders.csv --profile <profile>
+databricks fs cp data/customers.csv dbfs:/Volumes/demo/update_repos_sample/raw/customers/customers.csv --profile <profile>
+databricks bundle deploy -t dev --var catalog=demo --profile <profile>
+databricks bundle run ingest -t dev --var catalog=demo --profile <profile>
 ```
 
-Deploying creates the jobs, the pipeline, a schema and a volume; none of
-them is scheduled. Then create the job outside the bundle from
-`manual/job_created_by_hand.json` (replace the notebook path by the bundle's
-files path):
-
-```bash
-databricks jobs create --json @manual/job_created_by_hand.json --profile <profile>
-```
-
-Load the demo data of `data/` (data/README.md): the code reads and writes
-`demo.update_repos_sample`.
-
-Point the agent's `source_root` to the bundle's files path
-(`/Workspace/Users/<you>/.bundle/update_repos_sample/dev/files`) and its
-`project_schemas` to `demo.update_repos_sample` and the deployed schema.
+The run creates the tables. Without the raw files, the agent reports the missing input (rule
+IO-007) and does not test its changes (step 6c needs the project to run on its own data).
 
 ## Evaluation
 
-`expected.yaml` is deployed with the project so the agent's evaluation job
-can read it; give the agent `source_exclude: [expected.yaml, EXPECTED.md]` so
-its inventory does not analyse them. Run one model setup with
-`databricks bundle run evaluate --params setup=<name>` in the agent's bundle.
-
+`expected.yaml` is the agent's evaluation set for this example. The larger set of earlier versions
+(116 planted situations) is kept at the tag `eval-v1`.

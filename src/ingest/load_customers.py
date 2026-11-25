@@ -1,28 +1,33 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Load customers (synthetic)
+# MAGIC # Load customers
+# MAGIC Reads the raw customer file of the volume and replaces `customers`.
 
 # COMMAND ----------
 
-import requests
+from pyspark.sql.functions import udf
 
-API = "https://api.example.invalid/customers"
-# A fake password written in the code (SEC-001): it should come from a secret scope.
-password = "not-a-real-password-123"
-
-# HTTP call without timeout or error handling (IO-002, IO-003).
-response = requests.get(API, auth=("sample", password))
-customers = spark.createDataFrame(response.json())
+dbutils.widgets.text("catalog", "demo")
+dbutils.widgets.text("schema", "update_repos_sample")
+CATALOG = dbutils.widgets.get("catalog")
+SCHEMA = dbutils.widgets.get("schema")
 
 # COMMAND ----------
 
-spark.sql("USE CATALOG demo")
-spark.sql("USE SCHEMA update_repos_sample")
-# A one-level name, completed by the USE statements above.
-customers.write.mode("overwrite").saveAsTable("customers")
+customers = (spark.read.format("csv").option("header", True)
+             .schema("customer_id INT, name STRING, email STRING, phone STRING, country STRING")
+             .load(f"/Volumes/{CATALOG}/{SCHEMA}/raw/customers"))
+
+
+# A Python UDF where a native function does the same (upper(trim(country))): slower (CODE-003).
+@udf("string")
+def country_code(value):
+    return (value or "").strip().upper()
+
+
+customers = customers.withColumn("country", country_code("country"))
 
 # COMMAND ----------
 
-# MAGIC %sql
-# MAGIC CREATE OR REPLACE TABLE demo.update_repos_sample.customer_contacts AS
-# MAGIC SELECT customer_id, email, phone FROM demo.update_repos_sample.customers
+# Email and phone are written without a column mask (PII-001, once the table exists).
+customers.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.customers")

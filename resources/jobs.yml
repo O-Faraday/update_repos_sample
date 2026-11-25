@@ -1,4 +1,4 @@
-# Jobs of the sample. No schedule: deploying them costs nothing.
+# The shop's job: raw files of the volume -> tables -> a clean table. No schedule (Airflow triggers it).
 resources:
   jobs:
     # No retries, timeout or failure notification (JOB-004).
@@ -12,41 +12,17 @@ resources:
               catalog: ${var.catalog}
               schema: ${var.schema}
         - task_key: load_customers
-          depends_on:
-            - task_key: load_orders
           notebook_task:
             notebook_path: ../src/ingest/load_customers.py
-        - task_key: stream_events
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}
+        - task_key: clean_orders
           depends_on:
             - task_key: load_orders
+            - task_key: load_customers
           notebook_task:
-            notebook_path: ../src/ingest/stream_events.py
-
-    genai_answers:
-      name: sample_genai_answers
-      max_concurrent_runs: 1
-      timeout_seconds: 3600
-      tasks:
-        - task_key: ask_policy
-          max_retries: 1
-          timeout_seconds: 1800
-          notebook_task:
-            notebook_path: ../src/genai/ask_policy.py
-        - task_key: log_agent
-          max_retries: 1
-          timeout_seconds: 1800
-          notebook_task:
-            notebook_path: ../src/genai/agent_driver.py
-
-    # Delete it by hand after deploying to see BUNDLE-001 (declared, not
-    # deployed). Its notebooks hold deprecated patterns (CODE-001, CODE-003)
-    # and copied code (CODE-002).
-    legacy_cleanup:
-      name: sample_legacy_cleanup
-      tasks:
-        - task_key: old_etl
-          notebook_task:
-            notebook_path: ../src/legacy/old_etl.py
-        - task_key: old_etl_copy
-          notebook_task:
-            notebook_path: ../src/legacy/old_etl_copy.py
+            notebook_path: ../src/prepare/clean_orders.py
+            base_parameters:
+              catalog: ${var.catalog}
+              schema: ${var.schema}

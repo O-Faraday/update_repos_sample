@@ -1,10 +1,9 @@
-# dbt project of the sample (synthetic). Read by dbx_modernizer, never run by it.
-# Staging models are views in the target schema; marts are tables in <target schema>_marts.
+# dbt project of the shop. Staging models are views in the target schema; marts are tables in
+# <target schema>_marts. Airflow builds it after the ingest job (airflow/dags/nightly.py).
 name: sample_shop
 version: "1.0.0"
 profile: sample_shop
 model-paths: [models]
-test-paths: [tests]
 
 models:
   sample_shop:

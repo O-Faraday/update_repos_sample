@@ -1,11 +1,12 @@
 sources:
-  - name: raw
-    database: demo
-    schema: update_repos_sample
-    loaded_at_field: order_ts
+  # The tables the ingest job writes, in the schema dbt builds in.
+  - name: shop
+    database: "{{ target.database }}"
+    schema: "{{ target.schema }}"
     tables:
       - name: orders
         identifier: orders_raw
+        loaded_at_field: order_ts
         freshness: {warn_after: {count: 1, period: day}, error_after: {count: 2, period: day}}
-      # No freshness: a late customers load goes unnoticed (DBT-004).
+      # No freshness: a customers load that stops goes unnoticed (DBT-004).
       - name: customers

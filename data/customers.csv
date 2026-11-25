@@ -1,0 +1,9 @@
+customer_id,name,email,phone,country
+101,Alice Martin,alice.martin@example.com,+33 6 00 00 00 01,fr
+102,Bruno Keller,bruno.keller@example.com,+49 151 0000001,DE
+103,Carla Ruiz,carla.ruiz@example.com,+34 600 000 001, es
+104,Dario Rossi,dario.rossi@example.com,+39 300 000 0001,it
+105,Emma Peeters,emma.peeters@example.com,+32 470 00 00 01,BE
+106,Fanny Leroy,fanny.leroy@example.com,+33 6 00 00 00 02,FR
+107,Giulia Bianchi,giulia.bianchi@example.com,+39 300 000 0002,IT
+108,Hugo Janssens,hugo.janssens@example.com,+32 470 00 00 02,be
