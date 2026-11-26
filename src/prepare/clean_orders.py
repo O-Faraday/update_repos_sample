@@ -2,7 +2,6 @@
 # MAGIC %md
 # MAGIC # Clean orders
 # MAGIC Cleans the country codes of the orders with the shared pandas helpers and writes `orders_clean`.
-# MAGIC pandas is pinned below to another version than in requirements.txt (LIB-001).
 
 # COMMAND ----------
 
@@ -22,8 +21,6 @@ SCHEMA = dbutils.widgets.get("schema")
 
 # COMMAND ----------
 
-# The whole table collected to the driver to use pandas (CODE-003): fine for the sample, not for a real
-# volume of orders.
 rows = spark.table(f"{CATALOG}.{SCHEMA}.orders_raw").select("order_id", "country", "amount").toPandas()
 frame = orders_frame(rows.to_dict("records"))
 if not is_text_column(frame, "country"):

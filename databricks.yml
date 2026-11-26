@@ -1,5 +1,4 @@
-# A small synthetic shop, to show what dbx_modernizer does. Every name, value and credential in this
-# repository is fake. EXPECTED.md lists what the agent should find, and why.
+# The shop's bundle: its job and the variables of its schema.
 bundle:
   name: update_repos_sample
 
@@ -18,6 +17,5 @@ targets:
   dev:
     mode: development
     default: true
-  # Production without run_as: the jobs would run as the person who deploys (BUNDLE-005).
   prod:
     mode: production

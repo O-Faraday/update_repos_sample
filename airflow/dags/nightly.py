@@ -1,8 +1,7 @@
 """The shop's nightly run, scheduled by Airflow outside Databricks (Databricks provider operators).
 
 fetch_partner_rates runs in Airflow itself. Then the ingest job of the bundle loads the raw files,
-and dbt builds its models from the tables it wrote. Synthetic: no connection, host or credential of
-a real workspace.
+and dbt builds its models from the tables it wrote.
 """
 
 from datetime import datetime
@@ -17,7 +16,7 @@ from airflow.providers.databricks.operators.databricks import (
 CONN = "databricks_default"
 
 with DAG(dag_id="shop_nightly", start_date=datetime(2026, 1, 1), schedule="0 2 * * *", catchup=False) as dag:
-    # Runs in Airflow: listed by the agent, never replayed on Databricks.
+    # Runs in Airflow.
     fetch_rates = BashOperator(task_id="fetch_partner_rates", bash_command="echo 'rates fetched'")
 
     # The bundle's job, by name.

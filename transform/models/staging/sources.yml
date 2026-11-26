@@ -6,7 +6,7 @@ sources:
     tables:
       - name: orders
         identifier: orders_raw
-        loaded_at_field: order_ts
-        freshness: {warn_after: {count: 1, period: day}, error_after: {count: 2, period: day}}
-      # No freshness: a customers load that stops goes unnoticed (DBT-004).
+        config:
+          loaded_at_field: order_ts
+          freshness: {warn_after: {count: 1, period: day}, error_after: {count: 2, period: day}}
       - name: customers

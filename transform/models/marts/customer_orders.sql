@@ -1,4 +1,4 @@
--- Written to the guidance: reads through ref(), merged on its key, tested (marts.yml).
+-- Orders and revenue per customer.
 {{ config(materialized='incremental', incremental_strategy='merge', unique_key='customer_id') }}
 select
     c.customer_id,

@@ -53,6 +53,27 @@ databricks bundle run ingest -t dev --var catalog=demo --profile <profile>
 The run creates the tables. Without the raw files, the agent reports the missing input (rule
 IO-007) and does not test its changes (step 6c needs the project to run on its own data).
 
+## Reset
+
+Before an evaluation run, start from the files of this repository only: tables left by an earlier
+version (another schema, other columns) or a job created by hand would be inventoried as part of the
+project and change what the agent finds.
+
+```bash
+# tables of the schema (each one the bundle's job or dbt creates again)
+databricks tables list demo update_repos_sample --profile <profile>
+databricks tables delete demo.update_repos_sample.<table> --profile <profile>
+# the raw files, copied again
+databricks fs cp --overwrite data/orders.csv dbfs:/Volumes/demo/update_repos_sample/raw/orders/orders.csv --profile <profile>
+databricks fs cp --overwrite data/customers.csv dbfs:/Volumes/demo/update_repos_sample/raw/customers/customers.csv --profile <profile>
+# no job but the bundle's: delete any other job that runs this repository's notebooks
+databricks jobs list --profile <profile>
+databricks bundle deploy -t dev --var catalog=demo --profile <profile>
+databricks bundle run ingest -t dev --var catalog=demo --profile <profile>
+```
+
+Run `ingest` once, after the reset: its run history is part of what the agent measures.
+
 ## Evaluation
 
 `expected.yaml` is the agent's evaluation set for this example. The larger set of earlier versions

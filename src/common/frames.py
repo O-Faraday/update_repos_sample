@@ -11,5 +11,5 @@ def orders_frame(rows: list[dict]) -> pd.DataFrame:
 
 
 def is_text_column(frame: pd.DataFrame, column: str) -> bool:
-    """Whether a column holds text, written for pandas 2 (text columns are of dtype object there)."""
+    """Whether a column holds text."""
     return frame[column].dtype == object

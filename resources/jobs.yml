@@ -1,7 +1,6 @@
-# The shop's job: raw files of the volume -> tables -> a clean table. No schedule (Airflow triggers it).
+# The shop's job: raw files of the volume -> tables -> a clean table. Airflow starts it (airflow/dags).
 resources:
   jobs:
-    # No retries, timeout or failure notification (JOB-004).
     ingest:
       name: sample_ingest
       tasks:

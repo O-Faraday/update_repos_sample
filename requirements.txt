@@ -1,3 +1,2 @@
-# Libraries of the shop's Python code. pandas is pinned to another version in
-# src/prepare/clean_orders.py (LIB-001); step 6 upgrades it to pandas 3.
+# Libraries of the shop's Python code.
 pandas==2.1.4

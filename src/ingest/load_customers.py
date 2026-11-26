@@ -19,7 +19,7 @@ customers = (spark.read.format("csv").option("header", True)
              .load(f"/Volumes/{CATALOG}/{SCHEMA}/raw/customers"))
 
 
-# A Python UDF where a native function does the same (upper(trim(country))): slower (CODE-003).
+# Country codes in upper case, without spaces.
 @udf("string")
 def country_code(value):
     return (value or "").strip().upper()
@@ -29,5 +29,4 @@ customers = customers.withColumn("country", country_code("country"))
 
 # COMMAND ----------
 
-# Email and phone are written without a column mask (PII-001, once the table exists).
 customers.write.mode("overwrite").saveAsTable(f"{CATALOG}.{SCHEMA}.customers")

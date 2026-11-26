@@ -1,4 +1,4 @@
--- Merged without unique_key: a re-run of the same day adds its rows again (DBT-002). No test (DBT-003).
+-- Orders and revenue per day and country.
 {{ config(materialized='incremental', incremental_strategy='merge') }}
 select
     order_date,

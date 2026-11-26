@@ -11,8 +11,8 @@ dbutils.widgets.text("schema", "update_repos_sample")
 CATALOG = dbutils.widgets.get("catalog")
 SCHEMA = dbutils.widgets.get("schema")
 
-# A fake password written in the code (SEC-001): it belongs in a secret scope.
-partner_password = "not-a-real-password-123"
+# The partner's export account.
+partner_password = "Shop-Export-2026!"
 
 # COMMAND ----------
 
