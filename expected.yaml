@@ -20,9 +20,29 @@ cases:
      expect_row: {target: /Volumes/demo/update_repos_sample/raw/orders, resolved: true}}
   - {id: I-dag, step: inventory, expect: report, title: The Airflow DAG is an object of the graph,
      object: airflow_dag:shop_nightly, table: inv_nodes, expect_row: {status: present, layer: 2-orchestration}}
-  - {id: I-inputs, step: inventory, expect: report, title: The raw files the job loads are in the volume,
-     object: volume:demo.update_repos_sample.raw, table: inv_facts, where: {metric: data_source_files},
-     expect_row: {probe: data_sources}}
+  - {id: I-inputs, step: inventory, expect: report, title: The raw order files the job loads are in the volume,
+     object: volume_path:/Volumes/demo/update_repos_sample/raw/orders, table: inv_facts,
+     where: {metric: data_source_files}, expect_row: {probe: data_sources}}
+  - {id: I-dbt-source, step: inventory, expect: report,
+     title: "A staging model reads the table the job writes (source declared with target.schema)",
+     object: transform/models/staging/stg_orders.sql, table: inv_edges, where: {relation: reads},
+     expect_row: {dst: table:demo.update_repos_sample.orders_raw}}
+  - {id: I-dbt-project, step: inventory, expect: report, title: The dbt project contains its models,
+     object: transform/dbt_project.yml, table: inv_edges, where: {relation: contains},
+     expect_row: {dst: "*transform/models/marts/daily_revenue.sql"}}
+  - {id: I-job-file, step: inventory, expect: report, title: The job is tied to the file that defines it,
+     object: job:ingest, table: inv_edges, where: {relation: defined_in}, expect_row: {dst: "*resources/jobs.yml"}}
+  - {id: I-scope-customers, step: inventory, expect: report,
+     title: "The customers table, written through an f-string, is in the scope",
+     object: table:demo.update_repos_sample.customers, table: inv_resources, expect_row: {resource_type: table}}
+  - {id: I-project-name, step: inventory, expect: report, title: The project is named after its bundle,
+     object: project, table: inv_nodes, where: {node_type: project}, expect_row: {name: update_repos_sample}}
+  - {id: I-language, step: inventory, expect: report, title: A Python file has a language,
+     object: src/common/frames.py, table: inv_sources, expect_row: {language: PYTHON}}
+  - {id: I-test-link, step: inventory, expect: report, title: The unit tests import the helpers they test,
+     object: tests/test_frames.py, table: inv_links, where: {kind: import}, expect_row: {found: true}}
+  - {id: I-one-flow, step: inventory, expect: report, title: "The graph holds the flow in one piece (job, dbt, DAG)",
+     object: project, table: inv_quality, where: {check: graph_islands}, expect_row: {value: 0}}
 
   # --- Step 2, rules: must report -----------------------------------------------------------------------------
   - {id: R-SEC-001, step: rules, expect: report, level: 0, rule: SEC-001,
@@ -58,7 +78,7 @@ cases:
 
   # --- Step 2, rules: must not report ---------------------------------------------------------------------------
   - {id: R-NOT-IO-007, step: rules, expect: not_report, level: 2, rule: IO-007,
-     title: The raw files the job reads are there, object: volume:demo.update_repos_sample.raw}
+     title: The raw files the job reads are there, object: volume_path:/Volumes/demo/update_repos_sample/raw/orders}
   - {id: R-NOT-IO-006, step: rules, expect: not_report, level: 2, rule: IO-006,
      title: CSV read with a schema, object: src/ingest/load_customers.py}
   - {id: R-NOT-DBT-002, step: rules, expect: not_report, level: 2, rule: DBT-002,

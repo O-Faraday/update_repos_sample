@@ -23,7 +23,7 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | R-LIB-001 | report | pandas pinned to two versions (requirements.txt and a notebook) | `project` | LIB-001 |  |
 | R-NOT-DBT-002 | must not report | Incremental model merged on its key | `transform/models/marts/customer_orders.sql` | DBT-002 |  |
 | R-NOT-IO-006 | must not report | CSV read with a schema | `src/ingest/load_customers.py` | IO-006 |  |
-| R-NOT-IO-007 | must not report | The raw files the job reads are there | `volume:demo.update_repos_sample.raw` | IO-007 |  |
+| R-NOT-IO-007 | must not report | The raw files the job reads are there | `volume_path:/Volumes/demo/update_repos_sample/raw/orders` | IO-007 |  |
 | R-NOT-REF-001 | must not report | Every object the code uses exists | `table:demo.update_repos_sample.orders_raw` | REF-001 |  |
 
 ## Code review (model)
@@ -45,7 +45,15 @@ Generated from `expected.yaml` (do not edit by hand: edit the YAML and render ag
 | Id | Expect | Situation | Where | What | Result |
 |---|---|---|---|---|---|
 | I-dag | report | The Airflow DAG is an object of the graph | `airflow_dag:shop_nightly` | `inv_nodes`: status = present, layer = 2-orchestration |  |
-| I-inputs | report | The raw files the job loads are in the volume | `volume:demo.update_repos_sample.raw` | `inv_facts`: probe = data_sources |  |
+| I-dbt-project | report | The dbt project contains its models | `transform/dbt_project.yml` | `inv_edges`: dst = *transform/models/marts/daily_revenue.sql |  |
+| I-dbt-source | report | A staging model reads the table the job writes (source declared with target.schema) | `transform/models/staging/stg_orders.sql` | `inv_edges`: dst = table:demo.update_repos_sample.orders_raw |  |
+| I-inputs | report | The raw order files the job loads are in the volume | `volume_path:/Volumes/demo/update_repos_sample/raw/orders` | `inv_facts`: probe = data_sources |  |
+| I-job-file | report | The job is tied to the file that defines it | `job:ingest` | `inv_edges`: dst = *resources/jobs.yml |  |
+| I-language | report | A Python file has a language | `src/common/frames.py` | `inv_sources`: language = PYTHON |  |
+| I-one-flow | report | The graph holds the flow in one piece (job, dbt, DAG) | `project` | `inv_quality`: value = 0 |  |
+| I-project-name | report | The project is named after its bundle | `project` | `inv_nodes`: name = update_repos_sample |  |
+| I-scope-customers | report | The customers table, written through an f-string, is in the scope | `table:demo.update_repos_sample.customers` | `inv_resources`: resource_type = table |  |
+| I-test-link | report | The unit tests import the helpers they test | `tests/test_frames.py` | `inv_links`: found = True |  |
 | I-widgets | report | Volume path built from widgets and an f-string | `src/ingest/load_orders.py` | `inv_io`: target = /Volumes/demo/update_repos_sample/raw/orders, resolved = True |  |
 
 ## Target design (step 4)
