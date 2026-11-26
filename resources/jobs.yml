@@ -5,18 +5,24 @@ resources:
       name: sample_ingest
       tasks:
         - task_key: load_orders
+          max_retries: 2
+          timeout_seconds: 600
           notebook_task:
             notebook_path: ../src/ingest/load_orders.py
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
         - task_key: load_customers
+          max_retries: 2
+          timeout_seconds: 600
           notebook_task:
             notebook_path: ../src/ingest/load_customers.py
             base_parameters:
               catalog: ${var.catalog}
               schema: ${var.schema}
         - task_key: clean_orders
+          max_retries: 2
+          timeout_seconds: 600
           depends_on:
             - task_key: load_orders
             - task_key: load_customers
