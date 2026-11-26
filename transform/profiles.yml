@@ -8,4 +8,4 @@ sample_shop:
       schema: update_repos_sample
       host: sample.cloud.databricks.example
       http_path: /sql/1.0/warehouses/sample
-      token: dapi-shop-7f3a9c21e5b84d06
+      token: "{{ env_var('DBT_ACCESS_TOKEN') }}"
