@@ -12,4 +12,4 @@ def orders_frame(rows: list[dict]) -> pd.DataFrame:
 
 def is_text_column(frame: pd.DataFrame, column: str) -> bool:
     """Whether a column holds text."""
-    return frame[column].dtype == object
+    return frame[column].dtype == object or isinstance(frame[column].dtype, pd.StringDtype)
