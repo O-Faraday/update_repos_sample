@@ -12,7 +12,7 @@ CATALOG = dbutils.widgets.get("catalog")
 SCHEMA = dbutils.widgets.get("schema")
 
 # The partner's export account.
-partner_password = "Shop-Export-2026!"
+partner_password = dbutils.secrets.get(scope="<secret scope>", key="partner_password")
 
 # COMMAND ----------
 
