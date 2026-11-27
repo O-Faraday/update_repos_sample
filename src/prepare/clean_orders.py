@@ -5,7 +5,7 @@
 
 # COMMAND ----------
 
-# MAGIC %pip install pandas==2.2.2
+# MAGIC %pip install pandas==3.1.1
 
 # COMMAND ----------
 
